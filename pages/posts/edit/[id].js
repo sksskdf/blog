@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../../../components/layout';
 import Head from 'next/head';
@@ -41,18 +41,9 @@ export default function EditPost({ postData, isNew }) {
   const [id, setId] = useState(postData?.id || '');
   const [title, setTitle] = useState(postData?.title || '');
   const [date, setDate] = useState(postData?.date || new Date().toISOString().split('T')[0]);
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(postData?.content || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (postData && postData.contentHtml) {
-      // Extract content from contentHtml by removing HTML tags
-      const div = document.createElement('div');
-      div.innerHTML = postData.contentHtml;
-      setContent(div.textContent || div.innerText || '');
-    }
-  }, [postData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
