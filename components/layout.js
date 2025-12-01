@@ -84,9 +84,7 @@ export default function Layout({ children, home }) {
           <Link href="/">← Back to home</Link>
         </div>
       )}
-      <div className={styles.visitorCount}>
-        {visitorCount !== null ? `방문자수: ${visitorCount}` : '방문자수: ...'}
-      </div>
     </div>
   );
 }
+
