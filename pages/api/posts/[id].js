@@ -1,6 +1,6 @@
 import { updatePost, deletePost, getPostRawData } from '../../../lib/posts';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   const { id } = req.query;
 
   if (!id) {
@@ -9,22 +9,26 @@ export default function handler(req, res) {
 
   if (req.method === 'PUT') {
     try {
-      const { title, date, content } = req.body;
+      const { title, date, content, category } = req.body;
 
       if (!title || !date || !content) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      updatePost(id, title, date, content);
+      const success = await updatePost(id, title, date, content, category || null);
 
-      res.status(200).json({ success: true, message: 'Post updated successfully' });
+      if (success) {
+        res.status(200).json({ success: true, message: 'Post updated successfully' });
+      } else {
+        res.status(404).json({ error: 'Post not found' });
+      }
     } catch (error) {
       console.error('Error updating post:', error);
       res.status(500).json({ error: 'Failed to update post' });
     }
   } else if (req.method === 'DELETE') {
     try {
-      const success = deletePost(id);
+      const success = await deletePost(id);
 
       if (success) {
         res.status(200).json({ success: true, message: 'Post deleted successfully' });
@@ -37,7 +41,12 @@ export default function handler(req, res) {
     }
   } else if (req.method === 'GET') {
     try {
-      const postData = getPostRawData(id);
+      const postData = await getPostRawData(id);
+      
+      if (!postData) {
+        return res.status(404).json({ error: 'Post not found' });
+      }
+      
       res.status(200).json(postData);
     } catch (error) {
       console.error('Error getting post:', error);

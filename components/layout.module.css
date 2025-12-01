@@ -2,6 +2,8 @@
     max-width: 36rem;
     padding: 0 1rem;
     margin: 3rem auto 6rem;
+    position: relative;
+    min-height: calc(100vh - 6rem);
   }
   
   .header {
@@ -12,4 +14,21 @@
   
   .backToHome {
     margin: 3rem 0 0;
+  }
+
+  .visitorCount {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    color: #999;
+    font-size: 0.75rem;
+    z-index: 100;
+  }
+
+  @media (max-width: 768px) {
+    .visitorCount {
+      bottom: 0.5rem;
+      right: 0.5rem;
+      font-size: 0.7rem;
+    }
   }

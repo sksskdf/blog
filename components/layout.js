@@ -1,5 +1,6 @@
 import Head from "next/head";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import styles from "./layout.module.css";
 import utilStyles from "../styles/utils.module.css";
 import Link from "next/link";
@@ -8,6 +9,25 @@ const name = "Harry-";
 export const siteTitle = "HARRY'S BLOG";
 
 export default function Layout({ children, home }) {
+  const [visitorCount, setVisitorCount] = useState(null);
+
+  useEffect(() => {
+    // 방문자수 조회
+    const fetchVisitorCount = async () => {
+      try {
+        const response = await fetch('/api/visitor-stats');
+        if (response.ok) {
+          const data = await response.json();
+          setVisitorCount(data.count);
+        }
+      } catch (error) {
+        console.error('Error fetching visitor count:', error);
+      }
+    };
+
+    fetchVisitorCount();
+  }, []);
+
   return (
     <div className={styles.container}>
       <Head>
@@ -64,6 +84,9 @@ export default function Layout({ children, home }) {
           <Link href="/">← Back to home</Link>
         </div>
       )}
+      <div className={styles.visitorCount}>
+        {visitorCount !== null ? `방문자수: ${visitorCount}` : '방문자수: ...'}
+      </div>
     </div>
   );
 }
