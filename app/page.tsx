@@ -265,6 +265,7 @@ export default function Home() {
 
           return (
             <Link
+              key={id}
               href={`/posts/${id}`}
               className="block group relative p-6 md:p-8 hover:bg-dark-card transition-colors duration-300 cursor-pointer"
             >
