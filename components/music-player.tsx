@@ -242,8 +242,6 @@ export default function MusicPlayer({
                 try {
                   const duration = event.target.getDuration();
                   setDuration(duration);
-                  // YouTube 플레이어 준비 후 볼륨 적용
-                  event.target.setVolume(volume * 100);
                   playerInitialized = true;
                 } catch (e) {
                   console.error("Error getting YouTube duration:", e);
@@ -288,7 +286,7 @@ export default function MusicPlayer({
       // 팝업이 닫혀도 플레이어는 유지 (재생 중단 방지)
       // cleanup에서 destroy하지 않음
     };
-  }, [isYouTube, youtubeVideoId, volume, isPlaying]); // handleNext는 ref로 처리하므로 의존성에서 제거
+  }, [isYouTube, youtubeVideoId, isPlaying]); // volume 제거 - 볼륨 변경시 플레이어 재초기화 방지
 
   // 트랙 변경 시 YouTube 여부 확인
   useEffect(() => {

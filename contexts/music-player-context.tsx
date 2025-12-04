@@ -58,11 +58,12 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
             setPlaylist(data);
             setCurrentTrack(data[0]);
 
+            // 음악 자동 재생 팝업 임시로 비활성화
             // Show toast only once on homepage
-            if (!toastShown && pathname === "/") {
-              setShowToast(true);
-              setToastShown(true);
-            }
+            // if (!toastShown && pathname === "/") {
+            //   setShowToast(true);
+            //   setToastShown(true);
+            // }
           }
         }
       } catch (error) {

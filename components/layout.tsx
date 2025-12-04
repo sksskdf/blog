@@ -142,7 +142,7 @@ export default function Layout({
             />
           )}
 
-          <div className="flex-1 overflow-y-auto overscroll-contain" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
             {children}
           </div>
         </main>
