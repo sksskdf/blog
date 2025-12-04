@@ -766,7 +766,12 @@ export default function MusicPlayer({
     }
   }, [isYouTube]); // volume은 의존성에서 제거 (volumeRef 사용)
 
+  // isPlaying 상태에 따라 재생/일시정지 제어
+  // 단, shouldPlayAfterTrackChange가 true인 경우는 트랙 변경 후 재생 useEffect에서 처리하므로 여기서는 처리하지 않음
   useEffect(() => {
+    // 트랙 변경 중이면 이 useEffect는 실행하지 않음
+    if (shouldPlayAfterTrackChange.current) return;
+
     if (isYouTube) {
       if (youtubePlayerRef.current) {
         try {
@@ -778,7 +783,7 @@ export default function MusicPlayer({
           ) {
             // 플레이어가 아직 준비되지 않았으면 준비될 때까지 대기
             setTimeout(() => {
-              if (youtubePlayerRef.current && isPlaying) {
+              if (youtubePlayerRef.current && isPlaying && !shouldPlayAfterTrackChange.current) {
                 try {
                   if (
                     typeof youtubePlayerRef.current.playVideo === "function"
@@ -801,7 +806,7 @@ export default function MusicPlayer({
           ) {
             // 플레이어가 준비되지 않았으면 준비될 때까지 대기
             setTimeout(() => {
-              if (youtubePlayerRef.current && isPlaying) {
+              if (youtubePlayerRef.current && isPlaying && !shouldPlayAfterTrackChange.current) {
                 try {
                   if (
                     typeof youtubePlayerRef.current.playVideo === "function"
@@ -838,7 +843,7 @@ export default function MusicPlayer({
         }
       }
     }
-  }, [isPlaying, currentTrackIndex, isYouTube]);
+  }, [isPlaying, isYouTube]); // currentTrackIndex 제거하여 트랙 변경 시 불필요한 재생/일시정지 방지
 
   // 자동 재생 처리 (한 번만 실행, 사용자가 일시중지한 경우 무시)
   useEffect(() => {
@@ -897,13 +902,36 @@ export default function MusicPlayer({
       return () => clearTimeout(timer);
     } else {
       // Audio element의 경우
+      // URL 정규화 함수 (스코프 문제 해결을 위해 먼저 정의)
+      const normalizeUrl = (url: string) => {
+        if (!url) return "";
+        try {
+          // 절대 URL인 경우 그대로 반환
+          if (url.startsWith("http://") || url.startsWith("https://")) {
+            return url;
+          }
+          // 상대 URL인 경우 현재 origin과 결합
+          return new URL(url, window.location.origin).href;
+        } catch {
+          return url;
+        }
+      };
+      
+      // 트랙 URL 정규화 (스코프 문제 해결)
+      const trackUrl = currentTrack.url || "";
+      const normalizedTrackUrl = normalizeUrl(trackUrl);
+      
       if (audioRef.current) {
         const audio = audioRef.current;
-        // URL이 일치하는지 확인
-        const currentUrl = audio.src || audio.getAttribute("src") || "";
+        // URL이 일치하는지 확인 (절대 URL과 상대 URL 모두 처리)
+        const audioUrl = audio.src || "";
+        const normalizedAudioUrl = normalizeUrl(audioUrl);
+        
         if (
-          currentUrl.includes(currentTrack.url) ||
-          audio.src === currentTrack.url
+          normalizedAudioUrl === normalizedTrackUrl ||
+          audioUrl === trackUrl ||
+          audioUrl.includes(trackUrl) ||
+          trackUrl.includes(audioUrl)
         ) {
           if (audio.readyState >= 2) {
             // 이미 준비되어 있으면 즉시 재생
@@ -913,14 +941,17 @@ export default function MusicPlayer({
           } else {
             // canplay 이벤트 대기
             const onCanPlay = () => {
-              if (
-                audioRef.current &&
-                audioRef.current.src === currentTrack.url
-              ) {
-                audioRef.current.play().catch(console.error);
-                setIsPlaying(true);
-                shouldPlayAfterTrackChange.current = false;
-                audio.removeEventListener("canplay", onCanPlay);
+              if (audioRef.current) {
+                const currentAudioUrl = normalizeUrl(audioRef.current.src || "");
+                if (
+                  currentAudioUrl === normalizedTrackUrl ||
+                  audioRef.current.src === trackUrl
+                ) {
+                  audioRef.current.play().catch(console.error);
+                  setIsPlaying(true);
+                  shouldPlayAfterTrackChange.current = false;
+                  audio.removeEventListener("canplay", onCanPlay);
+                }
               }
             };
             audio.addEventListener("canplay", onCanPlay);
@@ -935,28 +966,62 @@ export default function MusicPlayer({
           }
         } else {
           // URL이 일치하지 않으면 잠시 후 재시도 (audio element가 아직 생성 중일 수 있음)
-          const timer = setTimeout(() => {
-            if (audioRef.current && audioRef.current.src === currentTrack.url) {
-              if (audioRef.current.readyState >= 2) {
-                audioRef.current.play().catch(console.error);
-                setIsPlaying(true);
-                shouldPlayAfterTrackChange.current = false;
+          const checkAndPlay = () => {
+            if (audioRef.current) {
+              const currentAudioUrl = normalizeUrl(audioRef.current.src || "");
+              if (currentAudioUrl === normalizedTrackUrl || audioRef.current.src === trackUrl) {
+                if (audioRef.current.readyState >= 2) {
+                  audioRef.current.play().catch(console.error);
+                  setIsPlaying(true);
+                  shouldPlayAfterTrackChange.current = false;
+                  return true;
+                }
               }
             }
-          }, 200);
+            return false;
+          };
+          
+          // 최대 5번 재시도 (1초)
+          let retryCount = 0;
+          const maxRetries = 5;
+          const tryPlay = () => {
+            if (checkAndPlay() || retryCount >= maxRetries) {
+              return;
+            }
+            retryCount++;
+            setTimeout(tryPlay, 200);
+          };
+          const timer = setTimeout(tryPlay, 200);
           return () => clearTimeout(timer);
         }
       } else {
         // audio element가 아직 없으면 잠시 후 재시도
-        const timer = setTimeout(() => {
-          if (audioRef.current && audioRef.current.src === currentTrack.url) {
-            if (audioRef.current.readyState >= 2) {
-              audioRef.current.play().catch(console.error);
-              setIsPlaying(true);
-              shouldPlayAfterTrackChange.current = false;
+        const checkAndPlay = () => {
+          if (audioRef.current) {
+            const currentAudioUrl = normalizeUrl(audioRef.current.src || "");
+            if (currentAudioUrl === normalizedTrackUrl || audioRef.current.src === trackUrl) {
+              if (audioRef.current.readyState >= 2) {
+                audioRef.current.play().catch(console.error);
+                setIsPlaying(true);
+                shouldPlayAfterTrackChange.current = false;
+                return true;
+              }
             }
           }
-        }, 200);
+          return false;
+        };
+        
+        // 최대 5번 재시도 (1초)
+        let retryCount = 0;
+        const maxRetries = 5;
+        const tryPlay = () => {
+          if (checkAndPlay() || retryCount >= maxRetries) {
+            return;
+          }
+          retryCount++;
+          setTimeout(tryPlay, 200);
+        };
+        const timer = setTimeout(tryPlay, 200);
         return () => clearTimeout(timer);
       }
     }
