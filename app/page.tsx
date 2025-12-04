@@ -267,7 +267,7 @@ export default function Home() {
             <Link
               key={id}
               href={`/posts/${id}`}
-              className="block group relative p-6 md:p-8 hover:bg-dark-card transition-colors duration-300 cursor-pointer"
+              className="block group relative p-6 md:p-8 md:hover:bg-dark-card transition-colors duration-300 cursor-pointer"
             >
               <article className="relative">
                 <div className="flex flex-row items-baseline gap-8 mb-3">
@@ -282,7 +282,7 @@ export default function Home() {
                 </div>
 
                 <div className="md:pl-32">
-                  <h3 className="text-2xl md:text-4xl font-bold mb-3 leading-tight group-hover:text-brand-green transition-colors">
+                  <h3 className="text-2xl md:text-4xl font-bold mb-3 leading-tight md:group-hover:text-brand-green transition-colors">
                     {title}
                   </h3>
 
@@ -300,7 +300,7 @@ export default function Home() {
 
                 {/* Arrow Icon on Hover - 관리자 모드일 때는 숨김 */}
                 {!isAdmin && (
-                <div className="absolute top-6 right-6 md:top-8 md:right-8 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-brand-green z-10">
+                <div className="absolute top-6 right-6 md:top-8 md:right-8 opacity-0 -translate-x-4 md:group-hover:opacity-100 md:group-hover:translate-x-0 transition-all duration-300 text-brand-green z-10">
                   <svg
                     width="24"
                     height="24"

@@ -1,5 +1,8 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import { Post, Settings } from "../types";
 import { defaultSettings } from "../lib/settings";
@@ -22,6 +25,7 @@ export default function Sidebar({
   selectedCategory: externalSelectedCategory,
   settings,
 }: SidebarProps) {
+  const router = useRouter();
   const displayName = settings?.name || defaultSettings.name;
   const siteTitleText = settings?.siteTitle || defaultSettings.siteTitle;
   const subtitle = settings?.subtitle || defaultSettings.subtitle;
@@ -47,22 +51,33 @@ export default function Sidebar({
   }, [posts]);
 
   const handleCategoryClick = (category: string) => {
-    if (!onCategoryFilter) return;
-
-    if (selectedCategory === category) {
-      // 같은 카테고리를 다시 클릭하면 필터 해제
-      setSelectedCategory(null);
-      onCategoryFilter(null);
+    if (onCategoryFilter) {
+      // 홈 페이지에서는 필터링
+      if (selectedCategory === category) {
+        // 같은 카테고리를 다시 클릭하면 필터 해제
+        setSelectedCategory(null);
+        onCategoryFilter(null);
+      } else {
+        setSelectedCategory(category);
+        onCategoryFilter(category);
+      }
     } else {
-      setSelectedCategory(category);
-      onCategoryFilter(category);
+      // 상세보기 페이지에서는 홈으로 이동 (카테고리 필터는 적용하지 않음)
+      router.push("/");
+      onClose();
     }
   };
 
   const handleAllPostsClick = () => {
-    if (!onCategoryFilter) return;
-    setSelectedCategory(null);
-    onCategoryFilter(null);
+    if (onCategoryFilter) {
+      // 홈 페이지에서는 필터 해제
+      setSelectedCategory(null);
+      onCategoryFilter(null);
+    } else {
+      // 상세보기 페이지에서는 홈으로 이동
+      router.push("/");
+      onClose();
+    }
   };
 
   return (

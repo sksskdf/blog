@@ -49,7 +49,7 @@ export default function Layout({
   const description = settings?.description || defaultSettings.description;
 
   return (
-    <div className="h-screen bg-dark-bg relative overflow-x-hidden overflow-y-hidden flex flex-col">
+    <div className="h-screen bg-dark-bg relative overflow-x-hidden flex flex-col">
       <div className="flex flex-row flex-1 min-h-0">
         {/* Left Sidebar - Desktop Only */}
         <aside className="w-1/3 max-w-[400px] h-full p-8 flex flex-col justify-between border-r border-dark-border bg-dark-bg hidden lg:flex overflow-y-auto overscroll-contain">
@@ -120,9 +120,12 @@ export default function Layout({
         <main className="flex-1 w-full lg:w-2/3 min-w-0 flex flex-col overflow-hidden">
           {/* Mobile Nav Header */}
           <div className="lg:hidden p-6 border-b border-dark-border flex justify-between items-center bg-dark-bg flex-shrink-0 z-[100]">
-            <span className="font-mono text-xs text-brand-green">
+            <Link
+              href="/"
+              className="font-mono text-xs text-brand-green hover:opacity-80 transition-opacity cursor-pointer"
+            >
               /HOME/USER/BLOG
-            </span>
+            </Link>
             <HamburgerButton isOpen={isSidebarOpen} onClick={toggleSidebar} />
           </div>
 
@@ -134,15 +137,19 @@ export default function Layout({
           <Sidebar
             isOpen={isSidebarOpen}
             onClose={closeSidebar}
-            posts={home && posts ? posts : []}
+            posts={posts || []}
             onCategoryFilter={home && posts ? handleCategoryFilter : undefined}
             selectedCategory={home && posts ? selectedCategory || null : null}
             settings={settings}
           />
 
           <div
-            className="flex-1 overflow-y-auto overscroll-contain"
-            style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch" }}
+            className="flex-1 overflow-y-auto overscroll-contain min-h-0"
+            style={{
+              touchAction: "pan-y",
+              WebkitOverflowScrolling: "touch",
+              overscrollBehavior: "contain",
+            }}
           >
             {children}
           </div>

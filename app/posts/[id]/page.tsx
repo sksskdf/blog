@@ -1,8 +1,8 @@
-import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
 
-import { Post, Settings } from '../../../types';
-import { getPostData } from "../../../lib/posts";
+import { Post, Settings } from "../../../types";
+import { getPostData, getSortedPostsData } from "../../../lib/posts";
 import { getSettings } from "../../../lib/settings";
 import Layout from "../../../components/layout";
 import Date from "../../../components/date";
@@ -13,13 +13,15 @@ interface PostPageProps {
   }>;
 }
 
-export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PostPageProps): Promise<Metadata> {
   const { id } = await params;
   const postData = await getPostData(id);
-  
+
   if (!postData) {
     return {
-      title: 'Post Not Found',
+      title: "Post Not Found",
     };
   }
 
@@ -31,15 +33,17 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 export default async function PostPage({ params }: PostPageProps) {
   const { id } = await params;
   const postData = await getPostData(id);
-  
+
   if (!postData) {
     notFound();
   }
 
   const settings = await getSettings();
+  // 사이드바에 카테고리를 표시하기 위해 모든 포스트 로드
+  const allPostsData = await getSortedPostsData();
 
   return (
-    <Layout settings={settings}>
+    <Layout settings={settings} posts={allPostsData}>
       <article className="p-8 md:p-12">
         <h1 className="text-3xl md:text-4xl font-bold mb-4 text-dark-text leading-tight">
           {postData.title}
@@ -57,4 +61,3 @@ export default async function PostPage({ params }: PostPageProps) {
     </Layout>
   );
 }
-

@@ -81,6 +81,7 @@ export default function MusicPlayer({
   const playerRef = useRef<HTMLDivElement | null>(null);
   const lastTouchMoveTime = useRef<number>(0);
   const swipeOffsetRef = useRef<number>(0);
+  const shouldPlayAfterTrackChange = useRef<boolean>(false);
 
   useEffect(() => {
     swipeOffsetRef.current = swipeOffset;
@@ -257,16 +258,10 @@ export default function MusicPlayer({
     if (playlist.length > 0) {
       const wasPlaying = isPlaying;
       const nextIndex = (currentTrackIndex + 1) % playlist.length;
+      // 재생 상태를 ref에 저장
+      shouldPlayAfterTrackChange.current = wasPlaying;
       changeTrack(nextIndex);
-      // 재생 상태 유지: wasPlaying이 true일 때 재생 시작
-      if (wasPlaying) {
-        // 트랙 변경 후 플레이어가 준비될 시간을 두고 재생 시작
-        setTimeout(() => {
-          setIsPlaying(true);
-        }, 100);
-      } else {
-        setIsPlaying(false);
-      }
+      // setIsPlaying은 useEffect에서 처리
     }
   }, [playlist.length, currentTrackIndex, isPlaying]);
 
@@ -281,16 +276,10 @@ export default function MusicPlayer({
       const wasPlaying = isPlaying;
       const prevIndex =
         (currentTrackIndex - 1 + playlist.length) % playlist.length;
+      // 재생 상태를 ref에 저장
+      shouldPlayAfterTrackChange.current = wasPlaying;
       changeTrack(prevIndex);
-      // 재생 상태 유지: wasPlaying이 true일 때 재생 시작
-      if (wasPlaying) {
-        // 트랙 변경 후 플레이어가 준비될 시간을 두고 재생 시작
-        setTimeout(() => {
-          setIsPlaying(true);
-        }, 100);
-      } else {
-        setIsPlaying(false);
-      }
+      // setIsPlaying은 useEffect에서 처리
     }
   };
 
@@ -508,6 +497,23 @@ export default function MusicPlayer({
       document.body.appendChild(audioElement);
       (audioRef as React.MutableRefObject<HTMLAudioElement | null>).current =
         audioElement;
+
+      // 트랙 변경 후 재생해야 하면 canplay 이벤트 대기
+      if (shouldPlayAfterTrackChange.current) {
+        const onCanPlay = () => {
+          if (audioRef.current && audioRef.current.src === currentTrack.url) {
+            audioRef.current.play().catch(console.error);
+            setIsPlaying(true);
+            shouldPlayAfterTrackChange.current = false;
+            audioElement.removeEventListener("canplay", onCanPlay);
+          }
+        };
+        audioElement.addEventListener("canplay", onCanPlay);
+        // 최대 3초 대기
+        setTimeout(() => {
+          audioElement.removeEventListener("canplay", onCanPlay);
+        }, 3000);
+      }
 
       return () => {
         // cleanup: audio element 제거 (트랙이 변경되거나 컴포넌트가 언마운트될 때만)
@@ -858,6 +864,104 @@ export default function MusicPlayer({
     setUserPaused(false);
   }, [currentTrackIndex]);
 
+  // 트랙 변경 후 재생 처리 (shouldPlayAfterTrackChange가 true일 때)
+  useEffect(() => {
+    if (!shouldPlayAfterTrackChange.current || !currentTrack) return;
+
+    if (isYouTube) {
+      // YouTube 플레이어의 경우
+      const tryPlay = () => {
+        if (youtubePlayerRef.current) {
+          try {
+            if (
+              typeof youtubePlayerRef.current.getPlayerState === "function" &&
+              typeof youtubePlayerRef.current.playVideo === "function"
+            ) {
+              const playerState = youtubePlayerRef.current.getPlayerState();
+              if (playerState !== undefined) {
+                youtubePlayerRef.current.playVideo();
+                setIsPlaying(true);
+                shouldPlayAfterTrackChange.current = false;
+              } else {
+                setTimeout(tryPlay, 100);
+              }
+            }
+          } catch (e) {
+            setTimeout(tryPlay, 100);
+          }
+        } else {
+          setTimeout(tryPlay, 100);
+        }
+      };
+      const timer = setTimeout(tryPlay, 100);
+      return () => clearTimeout(timer);
+    } else {
+      // Audio element의 경우
+      if (audioRef.current) {
+        const audio = audioRef.current;
+        // URL이 일치하는지 확인
+        const currentUrl = audio.src || audio.getAttribute("src") || "";
+        if (
+          currentUrl.includes(currentTrack.url) ||
+          audio.src === currentTrack.url
+        ) {
+          if (audio.readyState >= 2) {
+            // 이미 준비되어 있으면 즉시 재생
+            audio.play().catch(console.error);
+            setIsPlaying(true);
+            shouldPlayAfterTrackChange.current = false;
+          } else {
+            // canplay 이벤트 대기
+            const onCanPlay = () => {
+              if (
+                audioRef.current &&
+                audioRef.current.src === currentTrack.url
+              ) {
+                audioRef.current.play().catch(console.error);
+                setIsPlaying(true);
+                shouldPlayAfterTrackChange.current = false;
+                audio.removeEventListener("canplay", onCanPlay);
+              }
+            };
+            audio.addEventListener("canplay", onCanPlay);
+            // 최대 3초 대기
+            const timeout = setTimeout(() => {
+              audio.removeEventListener("canplay", onCanPlay);
+            }, 3000);
+            return () => {
+              audio.removeEventListener("canplay", onCanPlay);
+              clearTimeout(timeout);
+            };
+          }
+        } else {
+          // URL이 일치하지 않으면 잠시 후 재시도 (audio element가 아직 생성 중일 수 있음)
+          const timer = setTimeout(() => {
+            if (audioRef.current && audioRef.current.src === currentTrack.url) {
+              if (audioRef.current.readyState >= 2) {
+                audioRef.current.play().catch(console.error);
+                setIsPlaying(true);
+                shouldPlayAfterTrackChange.current = false;
+              }
+            }
+          }, 200);
+          return () => clearTimeout(timer);
+        }
+      } else {
+        // audio element가 아직 없으면 잠시 후 재시도
+        const timer = setTimeout(() => {
+          if (audioRef.current && audioRef.current.src === currentTrack.url) {
+            if (audioRef.current.readyState >= 2) {
+              audioRef.current.play().catch(console.error);
+              setIsPlaying(true);
+              shouldPlayAfterTrackChange.current = false;
+            }
+          }
+        }, 200);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [currentTrackIndex, currentTrack, isYouTube]);
+
   // 플레이리스트 버튼을 눌러 펼쳤을 때, 리스트 영역이 바로 보이도록 스크롤
   useEffect(() => {
     if (showPlaylist && playlistContainerRef.current) {
@@ -953,16 +1057,10 @@ export default function MusicPlayer({
   const handleTrackSelect = (index: number) => {
     if (index < 0 || index >= playlist.length) return;
     const wasPlaying = isPlaying;
+    // 재생 상태를 ref에 저장
+    shouldPlayAfterTrackChange.current = wasPlaying;
     changeTrack(index);
-    // 재생 상태 유지: wasPlaying이 true일 때 재생 시작
-    if (wasPlaying) {
-      // 트랙 변경 후 플레이어가 준비될 시간을 두고 재생 시작
-      setTimeout(() => {
-        setIsPlaying(true);
-      }, 100);
-    } else {
-      setIsPlaying(false);
-    }
+    // setIsPlaying은 useEffect에서 처리
   };
 
   const formatTime = (seconds: number): string => {
@@ -1010,7 +1108,7 @@ export default function MusicPlayer({
             {/* Swipe down indicator for mobile - touch handlers here */}
             <div
               data-swipe-indicator
-              className="md:hidden flex justify-center py-2 -mx-3 -mt-3 mb-1 cursor-grab active:cursor-grabbing"
+              className="md:hidden flex justify-center items-center py-4 -mx-3 -mt-3 mb-1 cursor-grab active:cursor-grabbing min-h-[48px]"
               style={{ touchAction: "none" }}
             >
               <div className="w-10 h-1 bg-dark-border-subtle rounded-full"></div>
