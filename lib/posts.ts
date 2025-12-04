@@ -10,7 +10,7 @@ export async function getSortedPostsData(): Promise<Post[]> {
       'SELECT id, title, date, category FROM posts ORDER BY date DESC'
     );
     return result.map((row) => {
-      const postRow = row as PostRow;
+      const postRow = row as unknown as PostRow;
       return {
         id: postRow.id,
         title: postRow.title,
@@ -29,7 +29,7 @@ export async function getAllPostIds(): Promise<PostParams[]> {
     const result = await query('SELECT id FROM posts');
     return result.map((row) => ({
       params: {
-        id: (row as { id: string }).id,
+        id: (row as unknown as { id: string }).id,
       },
     }));
   } catch (error) {
@@ -40,10 +40,10 @@ export async function getAllPostIds(): Promise<PostParams[]> {
 
 export async function getPostData(id: string): Promise<Post | null> {
   try {
-    const post = await queryOne(
+    const post = (await queryOne(
       'SELECT id, title, date, category, content FROM posts WHERE id = $1',
       [id]
-    ) as PostRow | null;
+    )) as unknown as PostRow | null;
 
     if (!post) {
       return null;
@@ -69,10 +69,10 @@ export async function getPostData(id: string): Promise<Post | null> {
 
 export async function getPostRawData(id: string): Promise<Post | null> {
   try {
-    const post = await queryOne(
+    const post = (await queryOne(
       'SELECT id, title, date, category, content FROM posts WHERE id = $1',
       [id]
-    ) as PostRow | null;
+    )) as unknown as PostRow | null;
 
     if (!post) {
       return null;
@@ -143,7 +143,7 @@ export async function updatePost(
 export async function deletePost(id: string): Promise<boolean> {
   try {
     const result = await query('DELETE FROM posts WHERE id = $1', [id]);
-    return (result as { rowCount: number }).rowCount > 0;
+    return (result as unknown as { rowCount: number }).rowCount > 0;
   } catch (error) {
     console.error('Error deleting post:', error);
     throw error;

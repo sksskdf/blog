@@ -8,7 +8,7 @@ export async function getAllPlaylists(): Promise<Playlist[]> {
       'SELECT id, title, artist, url, cover, duration, display_order FROM playlists ORDER BY display_order ASC, id ASC'
     );
     return result.map((row) => {
-      const playlistRow = row as PlaylistRow;
+      const playlistRow = row as unknown as PlaylistRow;
       return {
         id: playlistRow.id,
         title: playlistRow.title,
@@ -26,10 +26,10 @@ export async function getAllPlaylists(): Promise<Playlist[]> {
 
 export async function getPlaylistById(id: number): Promise<Playlist | null> {
   try {
-    const playlist = await queryOne(
+    const playlist = (await queryOne(
       'SELECT id, title, artist, url, cover, duration, display_order FROM playlists WHERE id = $1',
       [id]
-    ) as PlaylistRow | null;
+    )) as unknown as PlaylistRow | null;
     
     if (!playlist) {
       return null;
@@ -62,7 +62,7 @@ export async function createPlaylist(
       'INSERT INTO playlists (title, artist, url, cover, duration, display_order, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id',
       [title, artist || null, url, cover || null, duration || null, displayOrder || 0]
     );
-    return (result[0] as { id: number }).id;
+    return (result[0] as unknown as { id: number }).id;
   } catch (error) {
     console.error('Error creating playlist:', error);
     throw error;
@@ -104,7 +104,7 @@ export async function updatePlaylist(
 export async function deletePlaylist(id: number): Promise<boolean> {
   try {
     const result = await query('DELETE FROM playlists WHERE id = $1', [id]);
-    return (result as { rowCount: number }).rowCount > 0;
+    return (result as unknown as { rowCount: number }).rowCount > 0;
   } catch (error) {
     console.error('Error deleting playlist:', error);
     throw error;
