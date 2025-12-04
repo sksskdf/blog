@@ -5,6 +5,11 @@ import { getYouTubeVideoId, isYouTubeUrl } from '../lib/utils/youtube';
 import { getCookie, setCookie } from '../lib/utils/cookies';
 import styles from './music-player.module.css';
 
+// Constants for swipe gesture
+const SWIPE_CLOSE_THRESHOLD = 100; // pixels to swipe down before closing
+const SWIPE_OPACITY_THRESHOLD = 200; // pixels for full opacity fade
+const THROTTLE_MS = 16; // ~60fps throttle for touch move
+
 interface MusicPlayerProps {
   playlist: Playlist[];
   isOpen: boolean;
@@ -45,8 +50,10 @@ export default function MusicPlayer({
   const touchStartX = useRef<number | null>(null);
   const [swipeOffset, setSwipeOffset] = useState<number>(0);
   const playerRef = useRef<HTMLDivElement | null>(null);
+  const lastTouchMoveTime = useRef<number>(0);
 
   // Touch handlers for swipe-down to close (mobile only)
+  // Applied to the swipe indicator area at the top of the player
   const handleTouchStart = useCallback((e: TouchEvent<HTMLDivElement>) => {
     const touch = e.touches[0];
     touchStartY.current = touch.clientY;
@@ -55,6 +62,11 @@ export default function MusicPlayer({
 
   const handleTouchMove = useCallback((e: TouchEvent<HTMLDivElement>) => {
     if (touchStartY.current === null || touchStartX.current === null) return;
+    
+    // Throttle updates to improve performance
+    const now = Date.now();
+    if (now - lastTouchMoveTime.current < THROTTLE_MS) return;
+    lastTouchMoveTime.current = now;
     
     const touch = e.touches[0];
     const deltaY = touch.clientY - touchStartY.current;
@@ -68,8 +80,8 @@ export default function MusicPlayer({
   }, []);
 
   const handleTouchEnd = useCallback(() => {
-    // If swiped down more than 100px, close the player
-    if (swipeOffset > 100) {
+    // If swiped down more than threshold, close the player
+    if (swipeOffset > SWIPE_CLOSE_THRESHOLD) {
       onClose();
     }
     // Reset state
@@ -634,19 +646,21 @@ export default function MusicPlayer({
             ref={playerRef}
             className="relative w-full max-w-[480px] md:w-80 md:max-w-[calc(100vw-40px)] bg-dark-card border border-dark-border rounded-t-2xl md:rounded-xl shadow-lg p-3 md:p-6 mb-0 md:mb-20 md:mr-5 flex flex-col gap-3 md:gap-4 text-dark-text animate-slide-up max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
             style={{
               transform: swipeOffset > 0 ? `translateY(${swipeOffset}px)` : undefined,
               transition: swipeOffset === 0 ? 'transform 0.2s ease-out' : 'none',
-              opacity: swipeOffset > 0 ? Math.max(0.5, 1 - swipeOffset / 200) : 1,
-              touchAction: 'pan-x',
+              opacity: swipeOffset > 0 ? Math.max(0.5, 1 - swipeOffset / SWIPE_OPACITY_THRESHOLD) : 1,
               WebkitOverflowScrolling: 'touch',
             }}
           >
-            {/* Swipe down indicator for mobile */}
-            <div className="md:hidden flex justify-center mb-2">
+            {/* Swipe down indicator for mobile - touch handlers here */}
+            <div 
+              className="md:hidden flex justify-center py-2 -mx-3 -mt-3 mb-1 cursor-grab active:cursor-grabbing"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{ touchAction: 'none' }}
+            >
               <div className="w-10 h-1 bg-dark-border-subtle rounded-full"></div>
             </div>
             {currentTrack.cover && (

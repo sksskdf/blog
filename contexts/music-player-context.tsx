@@ -8,6 +8,7 @@ import {
   ReactNode,
   useCallback,
 } from "react";
+import { usePathname } from "next/navigation";
 
 import { Playlist } from "../types";
 
@@ -44,6 +45,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
   const [shouldAutoplay, setShouldAutoplay] = useState<boolean>(false);
   const [showToast, setShowToast] = useState<boolean>(false);
   const [toastShown, setToastShown] = useState<boolean>(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const loadPlaylist = async () => {
@@ -57,12 +59,9 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
             setCurrentTrack(data[0]);
 
             // Show toast only once on homepage
-            if (!toastShown) {
-              const isHomePage = window.location.pathname === "/";
-              if (isHomePage) {
-                setShowToast(true);
-                setToastShown(true);
-              }
+            if (!toastShown && pathname === "/") {
+              setShowToast(true);
+              setToastShown(true);
             }
           }
         }
@@ -74,7 +73,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     };
 
     loadPlaylist();
-  }, [toastShown]);
+  }, [toastShown, pathname]);
 
   const togglePlayer = useCallback(() => {
     setIsPlayerOpen((prev) => !prev);
