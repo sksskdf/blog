@@ -132,11 +132,44 @@
   border-radius: 6px;
   background: #050505;
   transition: all 0.2s;
+  position: relative;
 }
 
 .playlistItem:hover {
   background: #111;
   border-color: #333;
+}
+
+.playlistItem.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.playlistItem.dragOver {
+  border-color: #00ff41;
+  background: #0a1a0a;
+}
+
+.dragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  cursor: grab;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+
+.dragHandle:hover {
+  color: #00ff41;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.playlistItem.dragging .dragHandle {
+  cursor: grabbing;
 }
 
 .playlistItemCover {

@@ -22,6 +22,7 @@ export interface Playlist {
   url: string;
   cover: string | null;
   duration: number | null;
+  displayOrder?: number;
 }
 
 export interface Settings {

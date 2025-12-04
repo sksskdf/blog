@@ -16,6 +16,7 @@ export async function getAllPlaylists(): Promise<Playlist[]> {
         url: playlistRow.url,
         cover: playlistRow.cover || null,
         duration: playlistRow.duration || null,
+        displayOrder: playlistRow.display_order,
       };
     });
   } catch (error) {
@@ -42,6 +43,7 @@ export async function getPlaylistById(id: number): Promise<Playlist | null> {
       url: playlist.url,
       cover: playlist.cover || null,
       duration: playlist.duration || null,
+      displayOrder: playlist.display_order,
     };
   } catch (error) {
     console.error('Error getting playlist:', error);

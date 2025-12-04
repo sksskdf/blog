@@ -76,6 +76,11 @@
     code {
       font-size: 0.85em;
     }
+
+    /* 모바일에서 스크롤 개선 */
+    * {
+      -webkit-overflow-scrolling: touch;
+    }
   }
 
   /* 마크다운 헤딩 스타일 */

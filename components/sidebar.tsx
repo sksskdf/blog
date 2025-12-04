@@ -8,8 +8,8 @@ import { extractCategories } from "../lib/utils/category";
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  posts: Post[];
-  onCategoryFilter: (category: string | null) => void;
+  posts?: Post[];
+  onCategoryFilter?: (category: string | null) => void;
   selectedCategory: string | null;
   settings?: Settings | null;
 }
@@ -38,11 +38,17 @@ export default function Sidebar({
   }, [externalSelectedCategory]);
 
   useEffect(() => {
-    const extractedCategories = extractCategories(posts);
-    setCategories(extractedCategories);
+    if (posts && posts.length > 0) {
+      const extractedCategories = extractCategories(posts);
+      setCategories(extractedCategories);
+    } else {
+      setCategories([]);
+    }
   }, [posts]);
 
   const handleCategoryClick = (category: string) => {
+    if (!onCategoryFilter) return;
+    
     if (selectedCategory === category) {
       // 같은 카테고리를 다시 클릭하면 필터 해제
       setSelectedCategory(null);
@@ -54,6 +60,7 @@ export default function Sidebar({
   };
 
   const handleAllPostsClick = () => {
+    if (!onCategoryFilter) return;
     setSelectedCategory(null);
     onCategoryFilter(null);
   };
@@ -140,42 +147,44 @@ export default function Sidebar({
             </div>
           </div>
 
-          {/* Category Section */}
-          <div className="mb-4">
-            <h3 className="font-mono text-sm text-brand-green mb-3">
-              카테고리
-            </h3>
-            <button
-              className={`block w-full px-4 py-3 mb-2 text-left text-sm font-mono transition-all duration-200 rounded ${
-                selectedCategory === null
-                  ? "bg-brand-green text-dark-card border border-brand-green font-bold"
-                  : "bg-transparent text-dark-muted border border-dark-border-subtle hover:bg-dark-gray hover:border-brand-green hover:text-brand-green"
-              }`}
-              onClick={handleAllPostsClick}
-            >
-              전체 게시글
-            </button>
+          {/* Category Section - posts와 onCategoryFilter가 있을 때만 표시 */}
+          {posts && posts.length > 0 && onCategoryFilter && (
+            <div className="mb-4">
+              <h3 className="font-mono text-sm text-brand-green mb-3">
+                카테고리
+              </h3>
+              <button
+                className={`block w-full px-4 py-3 mb-2 text-left text-sm font-mono transition-all duration-200 rounded ${
+                  selectedCategory === null
+                    ? "bg-brand-green text-dark-card border border-brand-green font-bold"
+                    : "bg-transparent text-dark-muted border border-dark-border-subtle hover:bg-dark-gray hover:border-brand-green hover:text-brand-green"
+                }`}
+                onClick={handleAllPostsClick}
+              >
+                전체 게시글
+              </button>
 
-            {categories.length > 0 ? (
-              categories.map((category) => (
-                <button
-                  key={category}
-                  className={`block w-full px-4 py-3 mb-2 text-left text-sm font-mono transition-all duration-200 rounded ${
-                    selectedCategory === category
-                      ? "bg-brand-green text-dark-card border border-brand-green font-bold"
-                      : "bg-transparent text-dark-muted border border-dark-border-subtle hover:bg-dark-gray hover:border-brand-green hover:text-brand-green"
-                  }`}
-                  onClick={() => handleCategoryClick(category)}
-                >
-                  {category}
-                </button>
-              ))
-            ) : (
-              <div className="p-4 text-center text-dark-subtle text-sm font-mono">
-                카테고리가 없습니다.
-              </div>
-            )}
-          </div>
+              {categories.length > 0 ? (
+                categories.map((category) => (
+                  <button
+                    key={category}
+                    className={`block w-full px-4 py-3 mb-2 text-left text-sm font-mono transition-all duration-200 rounded ${
+                      selectedCategory === category
+                        ? "bg-brand-green text-dark-card border border-brand-green font-bold"
+                        : "bg-transparent text-dark-muted border border-dark-border-subtle hover:bg-dark-gray hover:border-brand-green hover:text-brand-green"
+                    }`}
+                    onClick={() => handleCategoryClick(category)}
+                  >
+                    {category}
+                  </button>
+                ))
+              ) : (
+                <div className="p-4 text-center text-dark-subtle text-sm font-mono">
+                  카테고리가 없습니다.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </>

@@ -264,83 +264,91 @@ export default function Home() {
           const categoryText = getCategoryText(category);
 
           return (
-            <article
-              key={id}
-              className="group relative p-6 md:p-8 hover:bg-dark-card transition-colors duration-300 cursor-pointer"
+            <Link
+              href={`/posts/${id}`}
+              className="block group relative p-6 md:p-8 hover:bg-dark-card transition-colors duration-300 cursor-pointer"
             >
-              <div className="flex flex-row items-baseline gap-8 mb-3">
-                <span className="font-mono text-brand-green text-xs tracking-wider shrink-0">
-                  <Date dateString={date} />
-                </span>
-                <div className="flex gap-2">
-                  <span className="px-2 py-0.5 border border-dark-border-subtle rounded text-[10px] font-mono text-dark-muted uppercase tracking-widest">
-                    {categoryText}
+              <article className="relative">
+                <div className="flex flex-row items-baseline gap-8 mb-3">
+                  <span className="font-mono text-brand-green text-xs tracking-wider shrink-0">
+                    <Date dateString={date} />
                   </span>
-                </div>
-              </div>
-
-              <div className="md:pl-32">
-                <h3 className="text-2xl md:text-4xl font-bold mb-3 leading-tight group-hover:text-brand-green transition-colors">
-                  <Link
-                    href={`/posts/${id}`}
-                    className="hover-underline-animation before:absolute before:inset-0"
-                  >
-                    {title}
-                  </Link>
-                </h3>
-
-                <div className="flex items-center gap-4 text-xs font-mono text-dark-subtle">
-                  {isNew && (
-                    <span
-                      className="inline-flex items-center justify-center text-[0.7rem] font-bold text-dark-card bg-brand-green px-2 py-0.5 rounded-xl leading-tight mr-2"
-                      title="최신 게시글"
-                    >
-                      NEW
+                  <div className="flex gap-2">
+                    <span className="px-2 py-0.5 border border-dark-border-subtle rounded text-[10px] font-mono text-dark-muted uppercase tracking-widest">
+                      {categoryText}
                     </span>
-                  )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Arrow Icon on Hover - 관리자 모드일 때는 숨김 */}
-              {!isAdmin && (
-              <div className="absolute top-6 right-6 md:top-8 md:right-8 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-brand-green z-10">
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path
-                    d="M5 12h14M12 5l7 7-7 7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              )}
+                <div className="md:pl-32">
+                  <h3 className="text-2xl md:text-4xl font-bold mb-3 leading-tight group-hover:text-brand-green transition-colors">
+                    {title}
+                  </h3>
 
-              {isAdmin && (
-                <div
-                  className="absolute top-6 right-6 md:top-8 md:right-8 flex gap-2 z-20"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    onClick={() => handleEditPost(id)}
-                    className="px-2 py-1 bg-transparent text-dark-muted border border-dark-border-subtle rounded cursor-pointer text-xs font-mono transition-all duration-200 hover:border-brand-green hover:text-brand-green"
-                  >
-                    EDIT
-                  </button>
-                  <button
-                    onClick={() => handleDeletePost(id)}
-                    className="px-2 py-1 bg-transparent text-dark-muted border border-dark-border-subtle rounded cursor-pointer text-xs font-mono transition-all duration-200 hover:border-red-500 hover:text-red-500"
-                  >
-                    DEL
-                  </button>
+                  <div className="flex items-center gap-4 text-xs font-mono text-dark-subtle">
+                    {isNew && (
+                      <span
+                        className="inline-flex items-center justify-center text-[0.7rem] font-bold text-dark-card bg-brand-green px-2 py-0.5 rounded-xl leading-tight mr-2"
+                        title="최신 게시글"
+                      >
+                        NEW
+                      </span>
+                    )}
+                  </div>
                 </div>
-              )}
-            </article>
+
+                {/* Arrow Icon on Hover - 관리자 모드일 때는 숨김 */}
+                {!isAdmin && (
+                <div className="absolute top-6 right-6 md:top-8 md:right-8 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-brand-green z-10">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path
+                      d="M5 12h14M12 5l7 7-7 7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                )}
+
+                {isAdmin && (
+                  <div
+                    className="absolute top-6 right-6 md:top-8 md:right-8 flex gap-2 z-20"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEditPost(id);
+                      }}
+                      className="px-2 py-1 bg-transparent text-dark-muted border border-dark-border-subtle rounded cursor-pointer text-xs font-mono transition-all duration-200 hover:border-brand-green hover:text-brand-green"
+                    >
+                      EDIT
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDeletePost(id);
+                      }}
+                      className="px-2 py-1 bg-transparent text-dark-muted border border-dark-border-subtle rounded cursor-pointer text-xs font-mono transition-all duration-200 hover:border-red-500 hover:text-red-500"
+                    >
+                      DEL
+                    </button>
+                  </div>
+                )}
+              </article>
+            </Link>
           );
         })}
       </div>

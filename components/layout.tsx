@@ -121,9 +121,9 @@ export default function Layout({
         <main className="flex-1 w-full lg:w-2/3 min-w-0 flex flex-col overflow-hidden">
           {/* Mobile Nav Header */}
           <div className="lg:hidden p-6 border-b border-dark-border flex justify-between items-center bg-dark-bg flex-shrink-0 z-[100]">
-            <span className="font-mono text-xs text-brand-green">
+            <Link href="/" className="font-mono text-xs text-brand-green hover:opacity-80 transition-opacity cursor-pointer">
               /HOME/USER/BLOG
-            </span>
+            </Link>
             <HamburgerButton isOpen={isSidebarOpen} onClick={toggleSidebar} />
           </div>
 
@@ -132,18 +132,16 @@ export default function Layout({
             <HamburgerButton isOpen={isSidebarOpen} onClick={toggleSidebar} />
           </div>
 
-          {home && posts && (
-            <Sidebar
-              isOpen={isSidebarOpen}
-              onClose={closeSidebar}
-              posts={posts}
-              onCategoryFilter={handleCategoryFilter}
-              selectedCategory={selectedCategory || null}
-              settings={settings}
-            />
-          )}
+          <Sidebar
+            isOpen={isSidebarOpen}
+            onClose={closeSidebar}
+            posts={home && posts ? posts : []}
+            onCategoryFilter={home && posts ? handleCategoryFilter : undefined}
+            selectedCategory={home && posts ? (selectedCategory || null) : null}
+            settings={settings}
+          />
 
-          <div className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
             {children}
           </div>
         </main>

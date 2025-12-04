@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 import { Playlist } from '../types';
 import MusicPlayer from './music-player';
-import AutoplayToast from './autoplay-toast';
+// import AutoplayToast from './autoplay-toast'; // 임시 제거
 
 export default function MusicPlayerButton() {
   const [isPlayerOpen, setIsPlayerOpen] = useState<boolean>(false);
@@ -26,11 +26,11 @@ export default function MusicPlayerButton() {
             // 첫 번째 트랙을 기본값으로 설정
             setCurrentTrack(data[0]);
             
-            // 홈페이지에서만 자동 재생 토스트 표시 (매번 표시)
-            const isHomePage = window.location.pathname === '/';
-            if (isHomePage) {
-              setShowToast(true);
-            }
+            // 홈페이지에서만 자동 재생 토스트 표시 (매번 표시) - 임시 제거
+            // const isHomePage = window.location.pathname === '/';
+            // if (isHomePage) {
+            //   setShowToast(true);
+            // }
           }
         }
       } catch (error) {
@@ -101,12 +101,14 @@ export default function MusicPlayerButton() {
         onTrackChange={handleTrackChange}
         autoPlay={shouldAutoplay}
       />
+      {/* 임시 제거: 음악 자동 재생 팝업
       {showToast && (
         <AutoplayToast
           onAccept={handleAutoplayAccept}
           onDecline={handleAutoplayDecline}
         />
       )}
+      */}
     </>
   );
 }

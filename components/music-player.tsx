@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react';
+import { useState, useEffect, useRef, useCallback, ChangeEvent, useMemo } from 'react';
 
 import { Playlist } from '../types';
 import { getYouTubeVideoId, isYouTubeUrl } from '../lib/utils/youtube';
@@ -39,6 +39,30 @@ export default function MusicPlayer({
   const [autoPlayTriggered, setAutoPlayTriggered] = useState<boolean>(false);
   const [userPaused, setUserPaused] = useState<boolean>(false);
   const playlistContainerRef = useRef<HTMLDivElement | null>(null);
+  
+  // 드래그 다운 기능을 위한 state
+  const [dragY, setDragY] = useState<number>(0);
+  const [startY, setStartY] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const playerContentRef = useRef<HTMLDivElement | null>(null);
+  
+  // 드래그 상태를 ref로 관리하여 이벤트 리스너에서 최신 값 접근
+  const dragYRef = useRef<number>(0);
+  const startYRef = useRef<number>(0);
+  
+  useEffect(() => {
+    dragYRef.current = dragY;
+  }, [dragY]);
+  
+  useEffect(() => {
+    startYRef.current = startY;
+  }, [startY]);
+  
+  // volume을 ref로 관리하여 useEffect 재실행 방지
+  const volumeRef = useRef<number>(volume);
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
 
   // 쿠키에서 볼륨값 불러오기
   useEffect(() => {
@@ -47,6 +71,7 @@ export default function MusicPlayer({
       const volumeValue = parseFloat(savedVolume);
       if (!isNaN(volumeValue) && volumeValue >= 0 && volumeValue <= 1) {
         setVolume(volumeValue);
+        volumeRef.current = volumeValue;
       }
     }
   }, []);
@@ -64,7 +89,12 @@ export default function MusicPlayer({
       const wasPlaying = isPlaying;
       const nextIndex = (currentTrackIndex + 1) % playlist.length;
       changeTrack(nextIndex);
-      setIsPlaying(wasPlaying);
+      // 재생 상태였으면 트랙 변경 후 재생 시작 보장
+      if (wasPlaying) {
+        setIsPlaying(true);
+      } else {
+        setIsPlaying(false);
+      }
     }
   }, [playlist.length, currentTrackIndex, isPlaying]);
 
@@ -80,7 +110,12 @@ export default function MusicPlayer({
       const prevIndex =
         (currentTrackIndex - 1 + playlist.length) % playlist.length;
       changeTrack(prevIndex);
-      setIsPlaying(wasPlaying);
+      // 재생 상태였으면 트랙 변경 후 재생 시작 보장
+      if (wasPlaying) {
+        setIsPlaying(true);
+      } else {
+        setIsPlaying(false);
+      }
     }
   };
 
@@ -192,8 +227,8 @@ export default function MusicPlayer({
                 try {
                   const duration = event.target.getDuration();
                   setDuration(duration);
-                  // YouTube 플레이어 준비 후 볼륨 적용
-                  event.target.setVolume(volume * 100);
+                  // YouTube 플레이어 준비 후 볼륨 적용 (최신 volume 값 사용)
+                  event.target.setVolume(volumeRef.current * 100);
                   playerInitialized = true;
                 } catch (e) {
                   console.error("Error getting YouTube duration:", e);
@@ -238,7 +273,7 @@ export default function MusicPlayer({
       // 팝업이 닫혀도 플레이어는 유지 (재생 중단 방지)
       // cleanup에서 destroy하지 않음
     };
-  }, [isYouTube, youtubeVideoId, volume, isPlaying]); // handleNext는 ref로 처리하므로 의존성에서 제거
+  }, [isYouTube, youtubeVideoId, isPlaying]); // volume은 의존성에서 제거 (별도 useEffect에서 처리)
 
   // 트랙 변경 시 YouTube 여부 확인
   useEffect(() => {
@@ -276,8 +311,10 @@ export default function MusicPlayer({
       handleNextRef.current();
     };
     const handleLoadedMetadata = () => {
-      // 메타데이터 로드 후 볼륨 적용
-      audio.volume = volume;
+      // 메타데이터 로드 후 볼륨 적용 (최신 volume 값 사용)
+      if (audioRef.current) {
+        audioRef.current.volume = volumeRef.current;
+      }
       updateDuration();
     };
     const handleTimeUpdate = () => {
@@ -285,8 +322,9 @@ export default function MusicPlayer({
     };
 
     // timeupdate 이벤트는 재생 중에만 발생하므로 추가로 interval 사용
+    // 재생 중이거나 일시정지 상태일 때도 업데이트 (사용자가 seek한 경우 대비)
     const timeInterval = setInterval(() => {
-      if (!audio.paused && audio.currentTime > 0) {
+      if (audio.currentTime >= 0) {
         setCurrentTime(audio.currentTime);
       }
     }, 100);
@@ -297,7 +335,7 @@ export default function MusicPlayer({
 
     // 볼륨 즉시 적용 (이미 로드된 경우)
     if (audio.readyState >= 1) {
-      audio.volume = volume;
+      audio.volume = volumeRef.current;
       updateDuration();
     }
 
@@ -307,7 +345,7 @@ export default function MusicPlayer({
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.removeEventListener("ended", handleEnded);
     };
-  }, [currentTrackIndex, isYouTube, volume]); // handleNext는 ref로 처리하므로 의존성에서 제거
+  }, [currentTrackIndex, isYouTube]); // volume은 의존성에서 제거 (handleVolumeChange에서 직접 처리)
 
   // YouTube 시간 업데이트
   useEffect(() => {
@@ -317,25 +355,36 @@ export default function MusicPlayer({
       try {
         if (
           typeof youtubePlayerRef.current?.getCurrentTime === "function" &&
-          typeof youtubePlayerRef.current?.getDuration === "function"
+          typeof youtubePlayerRef.current?.getDuration === "function" &&
+          typeof youtubePlayerRef.current?.getPlayerState === "function"
         ) {
-          const currentTime = youtubePlayerRef.current.getCurrentTime();
-          const duration = youtubePlayerRef.current.getDuration();
-          setCurrentTime(currentTime || 0);
-          setDuration(duration || 0);
+          // 재생 중일 때만 업데이트
+          const playerState = youtubePlayerRef.current.getPlayerState();
+          if (playerState === window.YT.PlayerState.PLAYING) {
+            const currentTime = youtubePlayerRef.current.getCurrentTime();
+            const duration = youtubePlayerRef.current.getDuration();
+            setCurrentTime(currentTime || 0);
+            setDuration(duration || 0);
 
-          // 현재 트랙의 duration 저장
-          if (duration && currentTrack) {
-            setTrackDurations((prev) => ({
-              ...prev,
-              [currentTrack.id || currentTrackIndex]: duration,
-            }));
+            // 현재 트랙의 duration 저장
+            if (duration && currentTrack) {
+              setTrackDurations((prev) => ({
+                ...prev,
+                [currentTrack.id || currentTrackIndex]: duration,
+              }));
+            }
+          } else if (playerState === window.YT.PlayerState.PAUSED || playerState === window.YT.PlayerState.CUED) {
+            // 일시정지 상태일 때도 현재 시간은 업데이트 (사용자가 seek한 경우 대비)
+            const currentTime = youtubePlayerRef.current.getCurrentTime();
+            if (currentTime !== undefined) {
+              setCurrentTime(currentTime || 0);
+            }
           }
         }
       } catch (e) {
         // 플레이어가 준비되지 않았을 수 있음
       }
-    }, 1000);
+    }, 100);
 
     return () => clearInterval(interval);
   }, [isYouTube, currentTrack, currentTrackIndex]);
@@ -373,7 +422,7 @@ export default function MusicPlayer({
             const playerState = youtubePlayerRef.current.getPlayerState();
             // 플레이어가 준비되었을 때만 볼륨 설정
             if (playerState !== undefined) {
-              youtubePlayerRef.current.setVolume(volume * 100);
+              youtubePlayerRef.current.setVolume(volumeRef.current * 100);
             }
           }
         } catch (e) {
@@ -384,11 +433,11 @@ export default function MusicPlayer({
       if (audioRef.current) {
         // 오디오가 로드되었을 때만 볼륨 설정
         if (audioRef.current.readyState >= 1) {
-          audioRef.current.volume = volume;
+          audioRef.current.volume = volumeRef.current;
         }
       }
     }
-  }, [volume, isYouTube]);
+  }, [isYouTube]); // volume은 의존성에서 제거 (volumeRef 사용)
 
   useEffect(() => {
     if (isYouTube) {
@@ -456,7 +505,31 @@ export default function MusicPlayer({
     } else {
       if (audioRef.current) {
         if (isPlaying) {
-          audioRef.current.play().catch(console.error);
+          // 트랙이 변경된 경우 오디오가 로드될 때까지 기다린 후 재생
+          const playAudio = () => {
+            if (audioRef.current) {
+              audioRef.current.play().catch(console.error);
+            }
+          };
+          
+          if (audioRef.current.readyState >= 2) {
+            // 이미 로드된 경우 즉시 재생
+            playAudio();
+          } else {
+            // 로드 중인 경우 loadeddata 이벤트를 기다림
+            const handleLoadedData = () => {
+              playAudio();
+              audioRef.current?.removeEventListener('loadeddata', handleLoadedData);
+            };
+            audioRef.current.addEventListener('loadeddata', handleLoadedData);
+            // 타임아웃 설정 (최대 3초 대기)
+            setTimeout(() => {
+              audioRef.current?.removeEventListener('loadeddata', handleLoadedData);
+              if (audioRef.current && isPlaying) {
+                playAudio();
+              }
+            }, 3000);
+          }
         } else {
           audioRef.current.pause();
         }
@@ -545,6 +618,37 @@ export default function MusicPlayer({
 
   const handleVolumeChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
+    
+    // volumeRef를 먼저 업데이트하여 다른 로직이 최신 값을 사용하도록 함
+    volumeRef.current = newVolume;
+    
+    // 즉시 플레이어에 볼륨 적용 (리렌더링 전에)
+    if (isYouTube) {
+      if (youtubePlayerRef.current) {
+        try {
+          if (
+            typeof youtubePlayerRef.current.getPlayerState === "function" &&
+            typeof youtubePlayerRef.current.setVolume === "function"
+          ) {
+            const playerState = youtubePlayerRef.current.getPlayerState();
+            if (playerState !== undefined) {
+              youtubePlayerRef.current.setVolume(newVolume * 100);
+            }
+          }
+        } catch (e) {
+          // 플레이어가 아직 준비되지 않았을 수 있음
+        }
+      }
+    } else {
+      if (audioRef.current) {
+        // 오디오가 로드되어 있으면 즉시 볼륨 적용
+        if (audioRef.current.readyState >= 1) {
+          audioRef.current.volume = newVolume;
+        }
+      }
+    }
+    
+    // UI 업데이트를 위한 state 변경 (리렌더링 발생)
     setVolume(newVolume);
     setCookie("musicPlayerVolume", newVolume.toString());
   };
@@ -568,14 +672,166 @@ export default function MusicPlayer({
     return trackDurations[trackId] || track.duration || null;
   };
 
+  // 드래그 다운 핸들러 (모바일 전용)
+  const handleTouchStart = (e: TouchEvent | React.TouchEvent) => {
+    // 모바일에서만 작동
+    if (window.innerWidth >= 768) return;
+    
+    const touch = e.touches[0];
+    if (!touch) return;
+    
+    setStartY(touch.clientY);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: TouchEvent | React.TouchEvent) => {
+    // 모바일에서만 작동
+    if (window.innerWidth >= 768) return;
+    
+    // isDragging 상태를 직접 체크하지 않고 startY가 설정되어 있는지 확인
+    if (startY === 0) return;
+    
+    // 드래그 중 스크롤 방지
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const touch = e.touches[0];
+    if (!touch) return;
+    
+    const currentY = touch.clientY;
+    const deltaY = currentY - startY;
+    
+    // 아래로만 드래그 가능 (양수 값만)
+    if (deltaY > 0) {
+      setDragY(deltaY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    // startY가 설정되어 있지 않으면 드래그가 시작되지 않은 것
+    if (startY === 0) return;
+    
+    // 드래그 거리가 100px 이상이면 애니메이션과 함께 닫기
+    const threshold = 100;
+    if (dragY > threshold) {
+      // 화면 높이만큼 드래그하여 애니메이션 효과
+      const screenHeight = window.innerHeight;
+      setDragY(screenHeight);
+      // 애니메이션 후 닫기
+      setTimeout(() => {
+        onClose();
+      }, 200); // transition duration과 맞춤
+    } else {
+      // threshold 미만이면 원래 위치로 복귀
+      setDragY(0);
+    }
+    
+    // 상태 초기화
+    setStartY(0);
+    setIsDragging(false);
+  };
+
+  // non-passive 이벤트 리스너 등록 (모바일 드래그를 위해)
+  useEffect(() => {
+    if (!isOpen || !playerContentRef.current) return;
+    
+    const element = playerContentRef.current;
+    
+    // 모바일에서만 non-passive 리스너 등록
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) return;
+    
+    // 이벤트 핸들러를 로컬 함수로 정의하여 최신 state 값에 접근
+    const touchStartHandler = (e: TouchEvent) => {
+      if (window.innerWidth >= 768) return;
+      const touch = e.touches[0];
+      if (!touch) return;
+      setStartY(touch.clientY);
+      setIsDragging(true);
+    };
+    
+    const touchMoveHandler = (e: TouchEvent) => {
+      if (window.innerWidth >= 768) return;
+      
+      // startY를 ref로 체크하여 최신 값 사용
+      if (startYRef.current === 0) return;
+      
+      // 드래그 중 스크롤 방지
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const touch = e.touches[0];
+      if (!touch) return;
+      
+      const currentY = touch.clientY;
+      const deltaY = currentY - startYRef.current;
+      
+      // 아래로만 드래그 가능 (양수 값만)
+      if (deltaY > 0) {
+        setDragY(deltaY);
+      }
+    };
+    
+    const touchEndHandler = () => {
+      // ref를 사용하여 최신 값 확인
+      if (startYRef.current === 0) return;
+      
+      // 드래그 거리가 100px 이상이면 애니메이션과 함께 닫기
+      const threshold = 100;
+      if (dragYRef.current > threshold) {
+        // 화면 높이만큼 드래그하여 애니메이션 효과
+        const screenHeight = window.innerHeight;
+        setDragY(screenHeight);
+        // 애니메이션 후 닫기
+        setTimeout(() => {
+          onClose();
+        }, 200);
+      } else {
+        // threshold 미만이면 원래 위치로 복귀
+        setDragY(0);
+      }
+      
+      // 상태 초기화
+      setStartY(0);
+      setIsDragging(false);
+    };
+    
+    // non-passive 옵션으로 이벤트 리스너 등록
+    element.addEventListener('touchstart', touchStartHandler, { passive: false });
+    element.addEventListener('touchmove', touchMoveHandler, { passive: false });
+    element.addEventListener('touchend', touchEndHandler, { passive: false });
+    
+    return () => {
+      element.removeEventListener('touchstart', touchStartHandler);
+      element.removeEventListener('touchmove', touchMoveHandler);
+      element.removeEventListener('touchend', touchEndHandler);
+    };
+  }, [isOpen, onClose]);
+
+  // 팝업이 닫힐 때 드래그 상태 초기화
+  useEffect(() => {
+    if (!isOpen) {
+      setDragY(0);
+      setStartY(0);
+      setIsDragging(false);
+    }
+  }, [isOpen]);
+
   // 플레이어 로직은 항상 실행되도록 하고, UI만 조건부로 렌더링
   if (!currentTrack) return null;
 
   return (
     <>
       {/* 오디오 요소는 항상 렌더링 (팝업이 닫혀도 재생 유지) */}
+      {/* key를 currentTrack.url로 설정하여 트랙 변경 시에만 재생성되도록 함 */}
+      {/* volume 변경 시에는 재생성되지 않도록 함 */}
       {!isYouTube && (
-        <audio ref={audioRef} src={currentTrack.url} preload="metadata" />
+        <audio 
+          key={`audio-${currentTrack.url}`}
+          ref={audioRef} 
+          src={currentTrack.url} 
+          preload="metadata"
+        />
       )}
 
       {/* YouTube 컨테이너도 항상 렌더링 (팝업이 닫혀도 재생 유지) */}
@@ -593,15 +849,20 @@ export default function MusicPlayer({
           onClick={onClose}
         >
           <div
-            className="relative w-full max-w-[480px] md:w-80 md:max-w-[calc(100vw-40px)] bg-dark-card border border-dark-border rounded-t-2xl md:rounded-xl shadow-lg p-3 md:p-6 mb-0 md:mb-20 md:mr-5 flex flex-col gap-3 md:gap-4 text-dark-text animate-slide-up max-h-[90vh] overflow-y-auto"
+            ref={playerContentRef}
+            className="relative w-full max-w-[480px] md:w-80 md:max-w-[calc(100vw-40px)] bg-dark-card border border-dark-border rounded-t-2xl md:rounded-xl shadow-lg p-3 md:p-6 mb-0 md:mb-20 md:mr-5 flex flex-col gap-3 md:gap-4 text-dark-text animate-slide-up max-h-[90vh] overflow-y-auto transition-transform duration-200 ease-out"
             onClick={(e) => e.stopPropagation()}
+            style={{
+              transform: dragY > 0 ? `translateY(${dragY}px)` : 'translateY(0)',
+              touchAction: 'none',
+            }}
           >
             {currentTrack.cover && (
               <div className="w-full flex justify-center mb-4 relative">
                 <img
                   src={currentTrack.cover}
                   alt={`${currentTrack.title} cover`}
-                  className="w-30 h-30 rounded-lg object-cover shadow-md"
+                  className="w-[200px] h-[200px] rounded-lg object-cover shadow-md"
                 />
                 <button
                   onClick={onClose}
@@ -696,7 +957,11 @@ export default function MusicPlayer({
             <div className="text-center pt-2 border-t border-dark-border">
               <button
                 onClick={() => setShowPlaylist(!showPlaylist)}
-                className="bg-transparent border border-dark-border-subtle rounded-full w-10 h-10 p-0 cursor-pointer text-dark-muted flex items-center justify-center mx-auto transition-all duration-200 hover:bg-dark-gray hover:border-brand-green hover:text-brand-green"
+                className={`bg-transparent border border-dark-border-subtle rounded-full w-10 h-10 p-0 cursor-pointer flex items-center justify-center mx-auto transition-all duration-200 active:bg-dark-gray active:border-brand-green md:hover:bg-dark-gray md:hover:border-brand-green ${
+                  showPlaylist
+                    ? "text-brand-green border-brand-green"
+                    : "text-dark-muted md:hover:text-brand-green"
+                }`}
                 title={
                   showPlaylist
                     ? "플레이리스트 숨기기"
@@ -718,9 +983,7 @@ export default function MusicPlayer({
                 className="mt-2 md:mt-3 border-t border-dark-border pt-2 md:pt-3 flex-1 min-h-[40vh] overflow-y-auto md:flex-none md:max-h-[300px]"
               >
                 <div className="mb-2 md:mb-3">
-                  <h4 className="text-sm font-semibold text-dark-text font-mono m-0">
-                    플레이리스트
-                  </h4>
+
                 </div>
                 <div className="flex flex-col gap-2">
                   {playlist.map((track, index) => {
@@ -757,9 +1020,6 @@ export default function MusicPlayer({
                           <div className="text-xs text-dark-muted overflow-hidden text-ellipsis whitespace-nowrap">
                             {track.artist || "Unknown Artist"}
                           </div>
-                        </div>
-                        <div className="text-xs text-dark-muted flex-shrink-0 min-w-[45px] text-right font-mono">
-                          {trackDuration ? formatTime(trackDuration) : "--:--"}
                         </div>
                         {isCurrentTrack && (
                           <div className="text-sm text-brand-green flex-shrink-0 w-5 text-center">

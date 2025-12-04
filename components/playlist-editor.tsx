@@ -16,6 +16,8 @@ export default function PlaylistEditor() {
     displayOrder: 0,
   });
   const [isAdding, setIsAdding] = useState<boolean>(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   useEffect(() => {
     loadPlaylists();
@@ -55,7 +57,7 @@ export default function PlaylistEditor() {
       url: playlist.url || '',
       cover: playlist.cover || '',
       duration: playlist.duration?.toString() || '',
-      displayOrder: 0,
+      displayOrder: playlist.displayOrder ?? 0,
     });
   };
 
@@ -134,6 +136,95 @@ export default function PlaylistEditor() {
       duration: '',
       displayOrder: 0,
     });
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', '');
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    // 새로운 순서 계산
+    const newPlaylists = [...playlists];
+    const [draggedItem] = newPlaylists.splice(draggedIndex, 1);
+    newPlaylists.splice(dropIndex, 0, draggedItem);
+
+    // displayOrder 업데이트
+    const updatedPlaylists = newPlaylists.map((playlist, index) => ({
+      ...playlist,
+      displayOrder: index,
+    }));
+
+    // UI 즉시 업데이트
+    setPlaylists(updatedPlaylists);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+
+    // 서버에 순서 업데이트
+    try {
+      const updatePromises = updatedPlaylists.map((playlist, index) =>
+        fetch(`/api/playlists/${playlist.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: playlist.title,
+            artist: playlist.artist,
+            url: playlist.url,
+            cover: playlist.cover,
+            duration: playlist.duration,
+            displayOrder: index,
+          }),
+        }).then(async (response) => {
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Update failed');
+          }
+          return response;
+        })
+      );
+
+      const results = await Promise.allSettled(updatePromises);
+      const failed = results.filter((r) => r.status === 'rejected');
+      
+      if (failed.length > 0) {
+        console.error('Some playlist updates failed:', failed);
+        alert(`${failed.length}개의 플레이리스트 순서 업데이트에 실패했습니다.`);
+        // 실패 시 원래 순서로 복구
+        loadPlaylists();
+      }
+      // 성공적으로 업데이트됨
+    } catch (error) {
+      console.error('Error updating playlist order:', error);
+      alert('플레이리스트 순서 업데이트에 실패했습니다.');
+      // 실패 시 원래 순서로 복구
+      loadPlaylists();
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   return (
@@ -217,8 +308,26 @@ export default function PlaylistEditor() {
       )}
 
       <div className={styles.playlistList}>
-        {playlists.map((playlist) => (
-          <div key={playlist.id} className={styles.playlistItem}>
+        {playlists.map((playlist, index) => (
+          <div
+            key={playlist.id}
+            className={`${styles.playlistItem} ${
+              draggedIndex === index ? styles.dragging : ''
+            } ${
+              dragOverIndex === index ? styles.dragOver : ''
+            }`}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, index)}
+          >
+            <div 
+              className={styles.dragHandle}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragEnd={handleDragEnd}
+            >
+              <span className="material-icons">drag_handle</span>
+            </div>
             <div className={styles.playlistItemCover}>
               {playlist.cover ? (
                 <img src={playlist.cover} alt={playlist.title} />
@@ -231,15 +340,25 @@ export default function PlaylistEditor() {
               <div className={styles.playlistItemArtist}>{playlist.artist || 'Unknown Artist'}</div>
               <div className={styles.playlistItemUrl}>{playlist.url}</div>
             </div>
-            <div className={styles.playlistItemActions}>
+            <div 
+              className={styles.playlistItemActions}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
-                onClick={() => handleEdit(playlist)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(playlist);
+                }}
                 className={styles.editButton}
               >
                 수정
               </button>
               <button
-                onClick={() => handleDelete(playlist.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(playlist.id);
+                }}
                 className={styles.deleteButton}
               >
                 삭제
