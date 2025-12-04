@@ -1,65 +1,23 @@
-import { useState, useEffect } from 'react';
+'use client';
 
-import { Playlist } from '../types';
+import { useMusicPlayer } from '../contexts/music-player-context';
 import MusicPlayer from './music-player';
 import AutoplayToast from './autoplay-toast';
 
 export default function MusicPlayerButton() {
-  const [isPlayerOpen, setIsPlayerOpen] = useState<boolean>(false);
-  const [playlist, setPlaylist] = useState<Playlist[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [currentTrack, setCurrentTrack] = useState<Playlist | null>(null);
-  const [shouldAutoplay, setShouldAutoplay] = useState<boolean>(false);
-  const [showToast, setShowToast] = useState<boolean>(false);
-
-  useEffect(() => {
-    // 플레이리스트 로드 (DB에서)
-    const loadPlaylist = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch('/api/playlists');
-        if (response.ok) {
-          const data = await response.json() as Playlist[];
-          // 배열이고 길이가 0보다 큰 경우에만 설정
-          if (Array.isArray(data) && data.length > 0) {
-            setPlaylist(data);
-            // 첫 번째 트랙을 기본값으로 설정
-            setCurrentTrack(data[0]);
-            
-            // 홈페이지에서만 자동 재생 토스트 표시 (매번 표시)
-            const isHomePage = window.location.pathname === '/';
-            if (isHomePage) {
-              setShowToast(true);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error loading playlist:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadPlaylist();
-  }, []);
-
-  const togglePlayer = () => {
-    setIsPlayerOpen(!isPlayerOpen);
-  };
-
-  const handleTrackChange = (track: Playlist) => {
-    setCurrentTrack(track);
-  };
-
-  const handleAutoplayAccept = () => {
-    setShouldAutoplay(true);
-    setShowToast(false);
-  };
-
-  const handleAutoplayDecline = () => {
-    setShouldAutoplay(false);
-    setShowToast(false);
-  };
+  const {
+    isPlayerOpen,
+    setIsPlayerOpen,
+    playlist,
+    currentTrack,
+    shouldAutoplay,
+    showToast,
+    isLoading,
+    togglePlayer,
+    handleTrackChange,
+    handleAutoplayAccept,
+    handleAutoplayDecline,
+  } = useMusicPlayer();
 
   // 로딩 중이거나 플레이리스트가 없으면 버튼을 표시하지 않음
   if (isLoading) {

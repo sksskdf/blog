@@ -1,6 +1,8 @@
 import '../styles/globals.css';
 import { AdminProvider } from "../contexts/admin-contexts";
+import { MusicPlayerProvider } from "../contexts/music-player-context";
 import AdminModeHandler from "../components/admin-mode-handler";
+import MusicPlayerButton from "../components/music-player-button";
 import { getSettings, defaultSettings } from "../lib/settings";
 import { ReactNode } from 'react';
 import { Metadata } from 'next';
@@ -48,8 +50,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
       </head>
       <body>
         <AdminProvider>
-          <AdminModeHandler />
-          {children}
+          <MusicPlayerProvider>
+            <AdminModeHandler />
+            {children}
+            <MusicPlayerButton />
+          </MusicPlayerProvider>
         </AdminProvider>
       </body>
     </html>
