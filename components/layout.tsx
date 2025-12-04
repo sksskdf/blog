@@ -6,7 +6,6 @@ import Link from "next/link";
 
 import { Post, Settings } from "../types";
 import { defaultSettings } from "../lib/settings";
-import MusicPlayerButton from "./music-player-button";
 import HamburgerButton from "./hamburger-button";
 import Sidebar from "./sidebar";
 
@@ -143,12 +142,11 @@ export default function Layout({
             />
           )}
 
-          <div className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="flex-1 overflow-y-auto overscroll-contain" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
             {children}
           </div>
         </main>
       </div>
-      <MusicPlayerButton />
     </div>
   );
 }

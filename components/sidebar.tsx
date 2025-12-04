@@ -91,7 +91,7 @@ export default function Sidebar({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
           {/* Profile Section - Mobile */}
           <div className="lg:hidden mb-6 pb-6 border-b border-dark-border">
             <div className="relative w-full aspect-square max-w-[200px] mx-auto bg-dark-bg rounded-xl border border-dark-border overflow-hidden flex items-center justify-center mb-4">

@@ -1,9 +1,14 @@
-import { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react';
+import { useState, useEffect, useRef, useCallback, ChangeEvent, TouchEvent } from 'react';
 
 import { Playlist } from '../types';
 import { getYouTubeVideoId, isYouTubeUrl } from '../lib/utils/youtube';
 import { getCookie, setCookie } from '../lib/utils/cookies';
 import styles from './music-player.module.css';
+
+// Constants for swipe gesture
+const SWIPE_CLOSE_THRESHOLD = 100; // pixels to swipe down before closing
+const SWIPE_OPACITY_THRESHOLD = 200; // pixels for full opacity fade
+const THROTTLE_MS = 16; // ~60fps throttle for touch move
 
 interface MusicPlayerProps {
   playlist: Playlist[];
@@ -39,6 +44,51 @@ export default function MusicPlayer({
   const [autoPlayTriggered, setAutoPlayTriggered] = useState<boolean>(false);
   const [userPaused, setUserPaused] = useState<boolean>(false);
   const playlistContainerRef = useRef<HTMLDivElement | null>(null);
+  
+  // Touch gesture state for swipe-down to close
+  const touchStartY = useRef<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState<number>(0);
+  const playerRef = useRef<HTMLDivElement | null>(null);
+  const lastTouchMoveTime = useRef<number>(0);
+
+  // Touch handlers for swipe-down to close (mobile only)
+  // Applied to the swipe indicator area at the top of the player
+  const handleTouchStart = useCallback((e: TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    touchStartY.current = touch.clientY;
+    touchStartX.current = touch.clientX;
+  }, []);
+
+  const handleTouchMove = useCallback((e: TouchEvent<HTMLDivElement>) => {
+    if (touchStartY.current === null || touchStartX.current === null) return;
+    
+    // Throttle updates to improve performance
+    const now = Date.now();
+    if (now - lastTouchMoveTime.current < THROTTLE_MS) return;
+    lastTouchMoveTime.current = now;
+    
+    const touch = e.touches[0];
+    const deltaY = touch.clientY - touchStartY.current;
+    const deltaX = Math.abs(touch.clientX - touchStartX.current);
+    
+    // Only trigger swipe if vertical movement is greater than horizontal
+    // and the swipe is downward
+    if (deltaY > 0 && deltaY > deltaX) {
+      setSwipeOffset(deltaY);
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    // If swiped down more than threshold, close the player
+    if (swipeOffset > SWIPE_CLOSE_THRESHOLD) {
+      onClose();
+    }
+    // Reset state
+    touchStartY.current = null;
+    touchStartX.current = null;
+    setSwipeOffset(0);
+  }, [swipeOffset, onClose]);
 
   // 쿠키에서 볼륨값 불러오기
   useEffect(() => {
@@ -593,9 +643,26 @@ export default function MusicPlayer({
           onClick={onClose}
         >
           <div
+            ref={playerRef}
             className="relative w-full max-w-[480px] md:w-80 md:max-w-[calc(100vw-40px)] bg-dark-card border border-dark-border rounded-t-2xl md:rounded-xl shadow-lg p-3 md:p-6 mb-0 md:mb-20 md:mr-5 flex flex-col gap-3 md:gap-4 text-dark-text animate-slide-up max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
+            style={{
+              transform: swipeOffset > 0 ? `translateY(${swipeOffset}px)` : undefined,
+              transition: swipeOffset === 0 ? 'transform 0.2s ease-out' : 'none',
+              opacity: swipeOffset > 0 ? Math.max(0.5, 1 - swipeOffset / SWIPE_OPACITY_THRESHOLD) : 1,
+              WebkitOverflowScrolling: 'touch',
+            }}
           >
+            {/* Swipe down indicator for mobile - touch handlers here */}
+            <div 
+              className="md:hidden flex justify-center py-2 -mx-3 -mt-3 mb-1 cursor-grab active:cursor-grabbing"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{ touchAction: 'none' }}
+            >
+              <div className="w-10 h-1 bg-dark-border-subtle rounded-full"></div>
+            </div>
             {currentTrack.cover && (
               <div className="w-full flex justify-center mb-4 relative">
                 <img
