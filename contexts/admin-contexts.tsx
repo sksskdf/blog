@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+"use client";
+
+import { createContext, useContext, useState, ReactNode } from "react";
 
 interface AdminContextType {
   isAdmin: boolean;
@@ -29,8 +31,7 @@ export function AdminProvider({ children }: AdminProviderProps) {
 export function useAdmin(): AdminContextType {
   const context = useContext(AdminContext);
   if (context === undefined) {
-    throw new Error('useAdmin must be used within an AdminProvider');
+    throw new Error("useAdmin must be used within an AdminProvider");
   }
   return context;
 }
-

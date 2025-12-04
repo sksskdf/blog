@@ -61,32 +61,29 @@ export default function Sidebar({ isOpen, onClose, posts, onCategoryFilter, sele
   return (
     <>
       {/* 오버레이 */}
-      {isOpen && (
-        <div className={styles.overlay} onClick={onClose} />
-      )}
-      
+      {isOpen && <div className={styles.overlay} onClick={onClose} />}
+
       {/* 사이드바 */}
-      <div className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
-        <div className={styles.sidebarHeader}>
-          <h2 className={styles.sidebarTitle}>카테고리</h2>
-          <button className={styles.closeButton} onClick={onClose} aria-label="닫기">
-            <span className="material-icons">close</span>
-          </button>
-        </div>
-        
+      <div className={`${styles.sidebar} ${isOpen ? styles.open : ""}`}>
+        <div className={styles.sidebarHeader}></div>
+
         <div className={styles.sidebarContent}>
           <button
-            className={`${styles.categoryItem} ${selectedCategory === null ? styles.active : ''}`}
+            className={`${styles.categoryItem} ${
+              selectedCategory === null ? styles.active : ""
+            }`}
             onClick={handleAllPostsClick}
           >
             전체 게시글
           </button>
-          
+
           {categories.length > 0 ? (
             categories.map((category) => (
               <button
                 key={category}
-                className={`${styles.categoryItem} ${selectedCategory === category ? styles.active : ''}`}
+                className={`${styles.categoryItem} ${
+                  selectedCategory === category ? styles.active : ""
+                }`}
                 onClick={() => handleCategoryClick(category)}
               >
                 {category}

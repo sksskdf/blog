@@ -26,6 +26,25 @@ function isYouTubeUrl(url: string | null): boolean {
   return url ? (url.includes('youtube.com') || url.includes('youtu.be')) : false;
 }
 
+// 쿠키에서 값 읽기
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(';').shift() || null;
+  }
+  return null;
+}
+
+// 쿠키에 값 저장
+function setCookie(name: string, value: string, days: number = 365): void {
+  if (typeof document === 'undefined') return;
+  const expires = new Date();
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+}
+
 interface MusicPlayerProps {
   playlist: Playlist[];
   isOpen: boolean;
@@ -43,9 +62,24 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
   const youtubePlayerRef = useRef<YT.Player | null>(null);
   const [isYouTube, setIsYouTube] = useState<boolean>(false);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
-  const youtubeContainerId = useRef<string>(`youtube-player-${Date.now()}-${Math.random()}`);
+  const youtubeContainerId = useRef<string>(
+    `youtube-player-${Date.now()}-${Math.random()}`
+  );
   const [showPlaylist, setShowPlaylist] = useState<boolean>(false);
-  const [trackDurations, setTrackDurations] = useState<Record<number | string, number>>({});
+  const [trackDurations, setTrackDurations] = useState<
+    Record<number | string, number>
+  >({});
+
+  // 쿠키에서 볼륨값 불러오기
+  useEffect(() => {
+    const savedVolume = getCookie("musicPlayerVolume");
+    if (savedVolume) {
+      const volumeValue = parseFloat(savedVolume);
+      if (!isNaN(volumeValue) && volumeValue >= 0 && volumeValue <= 1) {
+        setVolume(volumeValue);
+      }
+    }
+  }, []);
 
   const currentTrack = playlist[currentTrackIndex] || null;
 
@@ -58,11 +92,12 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
 
   // YouTube IFrame API 로드 및 초기화
   useEffect(() => {
+    // YouTube 트랙일 때 초기화 (팝업이 닫혀도 재생 유지를 위해 isOpen 체크 제거)
     if (!isYouTube || !youtubeVideoId) return;
 
     let playerInitialized = false;
     let retryCount = 0;
-    const maxRetries = 5;
+    const maxRetries = 10;
 
     const loadYouTubeAPI = () => {
       if (window.YT && window.YT.Player) {
@@ -73,12 +108,12 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
       } else {
         // API가 아직 로드되지 않았으면 로드
         if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-          const tag = document.createElement('script');
-          tag.src = 'https://www.youtube.com/iframe_api';
-          const firstScriptTag = document.getElementsByTagName('script')[0];
+          const tag = document.createElement("script");
+          tag.src = "https://www.youtube.com/iframe_api";
+          const firstScriptTag = document.getElementsByTagName("script")[0];
           firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
         }
-        
+
         // API 로드 완료 대기
         const originalCallback = window.onYouTubeIframeAPIReady;
         window.onYouTubeIframeAPIReady = () => {
@@ -94,7 +129,7 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
 
     const initializeYouTubePlayer = () => {
       if (playerInitialized) return;
-      
+
       // 컨테이너가 존재하는지 확인 (재시도 로직 포함)
       const checkContainer = () => {
         const container = document.getElementById(youtubeContainerId.current);
@@ -104,11 +139,12 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
             setTimeout(checkContainer, 200);
             return;
           } else {
-            console.error('YouTube container not found after retries');
+            // 조용히 실패 처리
+            console.warn("YouTube container not found after retries");
             return;
           }
         }
-        
+
         try {
           // 기존 플레이어가 있으면 제거
           if (youtubePlayerRef.current) {
@@ -120,7 +156,7 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
           }
 
           // 컨테이너 비우기
-          container.innerHTML = '';
+          container.innerHTML = "";
 
           // 새로운 플레이어 생성
           youtubePlayerRef.current = new window.YT.Player(container, {
@@ -142,9 +178,11 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
                 try {
                   const duration = event.target.getDuration();
                   setDuration(duration);
+                  // YouTube 플레이어 준비 후 볼륨 적용
+                  event.target.setVolume(volume * 100);
                   playerInitialized = true;
                 } catch (e) {
-                  console.error('Error getting YouTube duration:', e);
+                  console.error("Error getting YouTube duration:", e);
                 }
               },
               onStateChange: (event) => {
@@ -157,16 +195,16 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
                     setIsPlaying(false);
                   }
                 } catch (e) {
-                  console.error('Error handling YouTube state change:', e);
+                  console.error("Error handling YouTube state change:", e);
                 }
               },
               onError: (event) => {
-                console.error('YouTube player error:', event.data);
+                console.error("YouTube player error:", event.data);
               },
             },
           });
         } catch (e) {
-          console.error('Error initializing YouTube player:', e);
+          console.error("Error initializing YouTube player:", e);
         }
       };
 
@@ -182,14 +220,8 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
       clearTimeout(timer);
       playerInitialized = false;
       retryCount = 0;
-      if (youtubePlayerRef.current) {
-        try {
-          youtubePlayerRef.current.destroy();
-          youtubePlayerRef.current = null;
-        } catch (e) {
-          // 무시
-        }
-      }
+      // 팝업이 닫혀도 플레이어는 유지 (재생 중단 방지)
+      // cleanup에서 destroy하지 않음
     };
   }, [isYouTube, youtubeVideoId, handleNext]);
 
@@ -210,26 +242,56 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
   // 일반 오디오 파일 처리
   useEffect(() => {
     if (isYouTube) return; // YouTube는 별도 처리
-    
+
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration);
+    const updateTime = () => {
+      if (!audio.paused) {
+        setCurrentTime(audio.currentTime);
+      }
+    };
+    const updateDuration = () => {
+      if (audio.duration && !isNaN(audio.duration)) {
+        setDuration(audio.duration);
+      }
+    };
     const handleEnded = () => {
       handleNext();
     };
+    const handleLoadedMetadata = () => {
+      // 메타데이터 로드 후 볼륨 적용
+      audio.volume = volume;
+      updateDuration();
+    };
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+    };
 
-    audio.addEventListener('timeupdate', updateTime);
-    audio.addEventListener('loadedmetadata', updateDuration);
-    audio.addEventListener('ended', handleEnded);
+    // timeupdate 이벤트는 재생 중에만 발생하므로 추가로 interval 사용
+    const timeInterval = setInterval(() => {
+      if (!audio.paused && audio.currentTime > 0) {
+        setCurrentTime(audio.currentTime);
+      }
+    }, 100);
+
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("ended", handleEnded);
+
+    // 볼륨 즉시 적용 (이미 로드된 경우)
+    if (audio.readyState >= 1) {
+      audio.volume = volume;
+      updateDuration();
+    }
 
     return () => {
-      audio.removeEventListener('timeupdate', updateTime);
-      audio.removeEventListener('loadedmetadata', updateDuration);
-      audio.removeEventListener('ended', handleEnded);
+      clearInterval(timeInterval);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("ended", handleEnded);
     };
-  }, [currentTrackIndex, handleNext, isYouTube]);
+  }, [currentTrackIndex, handleNext, isYouTube, volume]);
 
   // YouTube 시간 업데이트
   useEffect(() => {
@@ -241,12 +303,12 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
         const duration = youtubePlayerRef.current!.getDuration();
         setCurrentTime(currentTime || 0);
         setDuration(duration || 0);
-        
+
         // 현재 트랙의 duration 저장
         if (duration && currentTrack) {
-          setTrackDurations(prev => ({
+          setTrackDurations((prev) => ({
             ...prev,
-            [currentTrack.id || currentTrackIndex]: duration
+            [currentTrack.id || currentTrackIndex]: duration,
           }));
         }
       } catch (e) {
@@ -260,21 +322,21 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
   // 일반 오디오 파일 duration 저장
   useEffect(() => {
     if (isYouTube || !audioRef.current || !currentTrack) return;
-    
+
     const audio = audioRef.current;
     const handleLoadedMetadata = () => {
       if (audio.duration && !isNaN(audio.duration)) {
-        setTrackDurations(prev => ({
+        setTrackDurations((prev) => ({
           ...prev,
-          [currentTrack.id || currentTrackIndex]: audio.duration
+          [currentTrack.id || currentTrackIndex]: audio.duration,
         }));
       }
     };
-    
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    
+
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+
     return () => {
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
   }, [currentTrackIndex, isYouTube, currentTrack]);
 
@@ -282,14 +344,21 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
     if (isYouTube) {
       if (youtubePlayerRef.current) {
         try {
-          youtubePlayerRef.current.setVolume(volume * 100);
+          const playerState = youtubePlayerRef.current.getPlayerState();
+          // 플레이어가 준비되었을 때만 볼륨 설정
+          if (playerState !== undefined) {
+            youtubePlayerRef.current.setVolume(volume * 100);
+          }
         } catch (e) {
-          console.error('Error setting YouTube volume:', e);
+          // 플레이어가 아직 준비되지 않았을 수 있음
         }
       }
     } else {
       if (audioRef.current) {
-        audioRef.current.volume = volume;
+        // 오디오가 로드되었을 때만 볼륨 설정
+        if (audioRef.current.readyState >= 1) {
+          audioRef.current.volume = volume;
+        }
       }
     }
   }, [volume, isYouTube]);
@@ -300,8 +369,10 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
         try {
           // 플레이어가 준비되었는지 확인
           const playerState = youtubePlayerRef.current.getPlayerState();
-          if (playerState === window.YT.PlayerState.UNSTARTED || 
-              playerState === window.YT.PlayerState.CUED) {
+          if (
+            playerState === window.YT.PlayerState.UNSTARTED ||
+            playerState === window.YT.PlayerState.CUED
+          ) {
             // 플레이어가 준비되지 않았으면 준비될 때까지 대기
             setTimeout(() => {
               if (youtubePlayerRef.current && isPlaying) {
@@ -310,14 +381,14 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
             }, 100);
             return;
           }
-          
+
           if (isPlaying) {
             youtubePlayerRef.current.playVideo();
           } else {
             youtubePlayerRef.current.pauseVideo();
           }
         } catch (e) {
-          console.error('Error controlling YouTube player:', e);
+          console.error("Error controlling YouTube player:", e);
         }
       }
     } else {
@@ -344,21 +415,23 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
 
   const handlePrevious = () => {
     if (playlist.length > 0) {
-      setCurrentTrackIndex((prev) => (prev - 1 + playlist.length) % playlist.length);
+      setCurrentTrackIndex(
+        (prev) => (prev - 1 + playlist.length) % playlist.length
+      );
       setIsPlaying(true);
     }
   };
 
   const handleSeek = (e: ChangeEvent<HTMLInputElement>) => {
     const newTime = (parseFloat(e.target.value) / 100) * duration;
-    
+
     if (isYouTube) {
       if (youtubePlayerRef.current) {
         try {
           youtubePlayerRef.current.seekTo(newTime, true);
           setCurrentTime(newTime);
         } catch (e) {
-          console.error('Error seeking YouTube video:', e);
+          console.error("Error seeking YouTube video:", e);
         }
       }
     } else {
@@ -373,6 +446,7 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
   const handleVolumeChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
+    setCookie("musicPlayerVolume", newVolume.toString());
   };
 
   const handleTrackSelect = (index: number) => {
@@ -381,10 +455,10 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
   };
 
   const formatTime = (seconds: number): string => {
-    if (isNaN(seconds) || !seconds) return '0:00';
+    if (isNaN(seconds) || seconds < 0) return "0:00";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const getTrackDuration = (track: Playlist): number | null => {
@@ -392,135 +466,172 @@ export default function MusicPlayer({ playlist, isOpen, onClose, onTrackChange }
     return trackDurations[trackId] || track.duration || null;
   };
 
-  if (!isOpen || !currentTrack) return null;
+  // 플레이어 로직은 항상 실행되도록 하고, UI만 조건부로 렌더링
+  if (!currentTrack) return null;
 
   return (
-    <div className={styles.playerContainer}>
-      <div className={styles.playerHeader}>
-        <h3 className={styles.playerTitle}>뮤직 플레이어</h3>
-        <button className={styles.closeButton} onClick={onClose} aria-label="닫기">
-          <span className="material-icons">close</span>
-        </button>
-      </div>
-      <div className={styles.trackInfo}>
-        <div className={styles.trackTitle}>{currentTrack.title}</div>
-        <div className={styles.trackArtist}>{currentTrack.artist || 'Unknown Artist'}</div>
-      </div>
-
+    <>
+      {/* 오디오 요소는 항상 렌더링 (팝업이 닫혀도 재생 유지) */}
       {!isYouTube && (
-        <audio
-          ref={audioRef}
-          src={currentTrack.url}
-          preload="metadata"
-        />
+        <audio ref={audioRef} src={currentTrack.url} preload="metadata" />
       )}
-      
+
+      {/* YouTube 컨테이너도 항상 렌더링 (팝업이 닫혀도 재생 유지) */}
       {isYouTube && (
-        <div 
+        <div
           id={youtubeContainerId.current}
-          style={{ 
-            position: 'absolute',
-            width: '1px',
-            height: '1px',
-            overflow: 'hidden',
+          style={{
+            position: "absolute",
+            width: "1px",
+            height: "1px",
+            overflow: "hidden",
             opacity: 0,
-            pointerEvents: 'none'
+            pointerEvents: "none",
           }}
         />
       )}
 
-      <div className={styles.progressContainer}>
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={duration ? (currentTime / duration) * 100 : 0}
-          onChange={handleSeek}
-          className={styles.progressBar}
-        />
-        <div className={styles.timeDisplay}>
-          <span>{formatTime(currentTime)}</span>
-          <span>{formatTime(duration)}</span>
-        </div>
-      </div>
-
-      <div className={styles.controls}>
-        <button onClick={handlePrevious} className={styles.controlButton} disabled={playlist.length <= 1}>
-          ⏮
-        </button>
-        <button onClick={handlePlayPause} className={styles.playButton}>
-          {isPlaying ? '⏸' : '▶'}
-        </button>
-        <button onClick={handleNext} className={styles.controlButton} disabled={playlist.length <= 1}>
-          ⏭
-        </button>
-      </div>
-
-      <div className={styles.volumeContainer}>
-        <span className={styles.volumeLabel}>🔊</span>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={volume}
-          onChange={handleVolumeChange}
-          className={styles.volumeBar}
-        />
-        <span className={styles.volumeValue}>{Math.round(volume * 100)}%</span>
-      </div>
-
-      <div className={styles.playlistInfo}>
-        <button
-          onClick={() => setShowPlaylist(!showPlaylist)}
-          className={styles.playlistToggle}
-        >
-          {showPlaylist ? '플레이리스트 숨기기' : `플레이리스트 보기 (${currentTrackIndex + 1} / ${playlist.length})`}
-        </button>
-      </div>
-
-      {showPlaylist && (
-        <div className={styles.playlistContainer}>
-          <div className={styles.playlistHeader}>
-            <h4 className={styles.playlistTitle}>플레이리스트</h4>
+      {/* UI는 팝업이 열려있을 때만 표시 */}
+      {isOpen && (
+        <div className={styles.playerContainer}>
+          {currentTrack.cover && (
+            <div className={styles.albumArt}>
+              <img src={currentTrack.cover} alt={`${currentTrack.title} cover`} />
+            </div>
+          )}
+          <div className={styles.trackInfo}>
+            <div className={styles.trackTitle}>{currentTrack.title}</div>
+            <div className={styles.trackArtist}>
+              {currentTrack.artist || "Unknown Artist"}
+            </div>
           </div>
-          <div className={styles.playlistList}>
-            {playlist.map((track, index) => {
-              const trackDuration = getTrackDuration(track);
-              const isCurrentTrack = index === currentTrackIndex;
-              
-              return (
-                <div
-                  key={track.id || index}
-                  className={`${styles.playlistItem} ${isCurrentTrack ? styles.playlistItemActive : ''}`}
-                  onClick={() => handleTrackSelect(index)}
-                >
-                  <div className={styles.playlistItemCover}>
-                    {track.cover ? (
-                      <img src={track.cover} alt={track.title} />
-                    ) : (
-                      <div className={styles.playlistItemPlaceholder}>🎵</div>
-                    )}
-                  </div>
-                  <div className={styles.playlistItemInfo}>
-                    <div className={styles.playlistItemTitle}>{track.title}</div>
-                    <div className={styles.playlistItemArtist}>{track.artist || 'Unknown Artist'}</div>
-                  </div>
-                  <div className={styles.playlistItemDuration}>
-                    {trackDuration ? formatTime(trackDuration) : '--:--'}
-                  </div>
-                  {isCurrentTrack && (
-                    <div className={styles.playlistItemPlaying}>
-                      {isPlaying ? '▶' : '⏸'}
+
+          <div className={styles.progressContainer}>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={duration ? (currentTime / duration) * 100 : 0}
+              onChange={handleSeek}
+              className={styles.progressBar}
+            />
+            <div className={styles.timeDisplay}>
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(duration)}</span>
+            </div>
+          </div>
+
+          <div className={styles.controls}>
+            <button
+              onClick={handlePrevious}
+              className={styles.controlButton}
+              disabled={playlist.length <= 1}
+              aria-label="이전 트랙"
+            >
+              <span className="material-icons">skip_previous</span>
+            </button>
+            <button
+              onClick={handlePlayPause}
+              className={styles.playButton}
+              aria-label={isPlaying ? "일시정지" : "재생"}
+            >
+              <span className="material-icons">
+                {isPlaying ? "pause" : "play_arrow"}
+              </span>
+            </button>
+            <button
+              onClick={handleNext}
+              className={styles.controlButton}
+              disabled={playlist.length <= 1}
+              aria-label="다음 트랙"
+            >
+              <span className="material-icons">skip_next</span>
+            </button>
+          </div>
+
+          <div className={styles.volumeContainer}>
+            <span className={styles.volumeLabel}>🔊</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={volume}
+              onChange={handleVolumeChange}
+              className={styles.volumeBar}
+            />
+            <span className={styles.volumeValue}>{Math.round(volume * 100)}%</span>
+          </div>
+
+          <div className={styles.playlistInfo}>
+            <button
+              onClick={() => setShowPlaylist(!showPlaylist)}
+              className={styles.playlistToggle}
+              title={
+                showPlaylist
+                  ? "플레이리스트 숨기기"
+                  : `플레이리스트 보기 (${currentTrackIndex + 1} / ${
+                      playlist.length
+                    })`
+              }
+              aria-label={
+                showPlaylist ? "플레이리스트 숨기기" : "플레이리스트 보기"
+              }
+            >
+              <span className="material-icons">queue_music</span>
+            </button>
+          </div>
+
+          {showPlaylist && (
+            <div className={styles.playlistContainer}>
+              <div className={styles.playlistHeader}>
+                <h4 className={styles.playlistTitle}>플레이리스트</h4>
+              </div>
+              <div className={styles.playlistList}>
+                {playlist.map((track, index) => {
+                  const trackDuration = getTrackDuration(track);
+                  const isCurrentTrack = index === currentTrackIndex;
+
+                  return (
+                    <div
+                      key={track.id || index}
+                      className={`${styles.playlistItem} ${
+                        isCurrentTrack ? styles.playlistItemActive : ""
+                      }`}
+                      onClick={() => handleTrackSelect(index)}
+                    >
+                      <div className={styles.playlistItemCover}>
+                        {track.cover ? (
+                          <img src={track.cover} alt={track.title} />
+                        ) : (
+                          <div className={styles.playlistItemPlaceholder}>🎵</div>
+                        )}
+                      </div>
+                      <div className={styles.playlistItemInfo}>
+                        <div className={styles.playlistItemTitle}>
+                          {track.title}
+                        </div>
+                        <div className={styles.playlistItemArtist}>
+                          {track.artist || "Unknown Artist"}
+                        </div>
+                      </div>
+                      <div className={styles.playlistItemDuration}>
+                        {trackDuration ? formatTime(trackDuration) : "--:--"}
+                      </div>
+                      {isCurrentTrack && (
+                        <div className={styles.playlistItemPlaying}>
+                          {isPlaying ? "▶" : "⏸"}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
-    </div>
+    </>
   );
 }
 

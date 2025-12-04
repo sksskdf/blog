@@ -1,4 +1,4 @@
-import { getTodayVisitorCount, incrementVisitorCount } from '../../../lib/visitor-stats';
+import { getTodayVisitorCount, incrementVisitorCount } from '@/lib/visitor-stats';
 import { NextResponse } from 'next/server';
 import { ApiResponse } from '../../../types';
 

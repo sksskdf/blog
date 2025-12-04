@@ -36,22 +36,22 @@ export default function Home() {
     const loadData = async () => {
       try {
         // 방문자수 증가
-        await fetch('/api/visitor-stats', { method: 'GET' });
-        
+        await fetch("/api/visitor-stats", { method: "GET" });
+
         // 게시글 및 설정 로드
         const [postsRes, settingsRes] = await Promise.all([
-          fetch('/api/posts'),
-          fetch('/api/settings')
+          fetch("/api/posts"),
+          fetch("/api/settings"),
         ]);
-        
+
         if (postsRes.ok) {
-          const posts = await postsRes.json() as Post[];
+          const posts = (await postsRes.json()) as Post[];
           setAllPostsData(posts);
           setFilteredPosts(posts);
         }
-        
+
         if (settingsRes.ok) {
-          const settingsData = await settingsRes.json() as Settings;
+          const settingsData = (await settingsRes.json()) as Settings;
           setSettings(settingsData);
           const subtitle = settingsData.subtitle || "Software Developer";
           setSubtitleHtml(subtitle);
@@ -90,9 +90,9 @@ export default function Home() {
     if (!showSettingsEditor) {
       const reloadSettings = async () => {
         try {
-          const response = await fetch('/api/settings');
+          const response = await fetch("/api/settings");
           if (response.ok) {
-            const settingsData = await response.json() as Settings;
+            const settingsData = (await response.json()) as Settings;
             setSettings(settingsData);
           }
         } catch (error) {
@@ -145,7 +145,7 @@ export default function Home() {
         method: "GET",
       });
       if (response.ok) {
-        const postData = await response.json() as Post;
+        const postData = (await response.json()) as Post;
         setEditingPost(postData);
         setShowForm(true);
       } else {
@@ -179,7 +179,14 @@ export default function Home() {
     }
   };
 
-  const handleSavePost = async (postData: Partial<Post> & { id: string; title: string; date: string; content: string }) => {
+  const handleSavePost = async (
+    postData: Partial<Post> & {
+      id: string;
+      title: string;
+      date: string;
+      content: string;
+    }
+  ) => {
     try {
       const url = editingPost ? `/api/posts/${editingPost.id}` : "/api/posts";
       const method = editingPost ? "PUT" : "POST";
@@ -238,8 +245,40 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <Layout home settings={settings} posts={[]} onCategoryFilter={handleCategoryFilter} selectedCategory={selectedCategory}>
-        <div>Loading...</div>
+      <Layout
+        home
+        settings={settings}
+        posts={[]}
+        onCategoryFilter={handleCategoryFilter}
+        selectedCategory={selectedCategory}
+      >
+        {/* 차트 막대 그래프 스타일 */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
+            gap: "0.5rem",
+            height: "60px",
+            marginTop: "10rem",
+          }}
+        >
+          {[1, 2, 3, 4, 5, 4, 3, 2].map((height, index) => (
+            <div
+              key={index}
+              style={{
+                width: "8px",
+                height: `${height * 12}px`,
+                backgroundColor: "#0070f3",
+                borderRadius: "4px 4px 0 0",
+                animation: `chartBar ${
+                  0.6 + index * 0.1
+                }s ease-in-out infinite`,
+                animationDelay: `${index * 0.1}s`,
+              }}
+            />
+          ))}
+        </div>
       </Layout>
     );
   }
@@ -326,20 +365,34 @@ export default function Home() {
                         display: "flex",
                         alignItems: "center",
                         gap: "0.5rem",
+                        flexWrap: "wrap",
                       }}
                     >
-                      <Link href={`/posts/${id}`}>{title}</Link>
+                      <Link
+                        href={`/posts/${id}`}
+                        style={{ display: "inline-block" }}
+                      >
+                        {title}
+                      </Link>
                       {isNew && (
                         <span
-                          className="material-icons"
                           style={{
-                            fontSize: "16px",
-                            color: "#ff0000",
-                            marginLeft: "0.25rem",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "0.7rem",
+                            fontWeight: "bold",
+                            color: "#ffffff",
+                            backgroundColor: "#ff4444",
+                            padding: "0.15rem 0.3rem",
+                            borderRadius: "12px",
+                            lineHeight: "1.3",
+                            verticalAlign: "middle",
+                            marginLeft: "0.1rem",
                           }}
                           title="최신 게시글"
                         >
-                          new_releases
+                          N
                         </span>
                       )}
                     </div>
@@ -394,7 +447,7 @@ export default function Home() {
           })}
         </ul>
       </section>
-      
+
       {isAdmin && (
         <section className={utilStyles.headingMd}>
           <div
@@ -422,7 +475,9 @@ export default function Home() {
                   fontSize: "0.875rem",
                 }}
               >
-                {showPlaylistEditor ? "플레이리스트 편집 숨기기" : "플레이리스트 편집"}
+                {showPlaylistEditor
+                  ? "플레이리스트 편집 숨기기"
+                  : "플레이리스트 편집"}
               </button>
               <button
                 onClick={() => {

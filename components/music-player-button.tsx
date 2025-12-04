@@ -72,9 +72,6 @@ export default function MusicPlayerButton() {
         {!displayCover && (
           <span className={styles.iconFallback}>{defaultIcon}</span>
         )}
-        {displayCover && isPlayerOpen && (
-          <span className={styles.playingIndicator}>▶</span>
-        )}
       </button>
       <MusicPlayer
         playlist={playlist}
