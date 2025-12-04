@@ -1,6 +1,6 @@
 import { getPlaylistById, updatePlaylist, deletePlaylist } from '../../../../lib/playlists';
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiResponse, Playlist } from '../../../types';
+import { ApiResponse, Playlist } from '@/types';
 import { isYouTubeUrl } from '../../../../lib/utils/youtube';
 import { checkYouTubeEmbeddable } from '../../../../lib/utils/youtube-embed-check';
 

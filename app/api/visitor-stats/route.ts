@@ -1,6 +1,6 @@
 import { getTodayVisitorCount, incrementVisitorCount } from '@/lib/visitor-stats';
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiResponse } from '../../../types';
+import { ApiResponse } from '@/types';
 import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest): Promise<NextResponse<{ count: number } | ApiResponse>> {

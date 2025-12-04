@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
-import { ApiResponse } from '../../../types';
+import { ApiResponse } from '@/types';
 
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse>> {
   try {

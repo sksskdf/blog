@@ -1,6 +1,6 @@
 import { createPost, getSortedPostsData } from '../../../lib/posts';
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiResponse, Post } from '../../../types';
+import { ApiResponse, Post } from '@/types';
 
 // 60초마다 재검증
 export const revalidate = 60;

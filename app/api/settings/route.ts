@@ -1,6 +1,6 @@
 import { getSettings, updateSettings } from '../../../lib/settings';
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiResponse, Settings } from '../../../types';
+import { ApiResponse, Settings } from '@/types';
 
 // 300초(5분)마다 재검증 (설정은 변경 빈도가 낮음)
 export const revalidate = 300;

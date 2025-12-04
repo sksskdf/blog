@@ -1,6 +1,6 @@
 import { updatePost, deletePost, getPostRawData } from '../../../../lib/posts';
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiResponse, Post } from '../../../types';
+import { ApiResponse, Post } from '@/types';
 
 interface RouteParams {
   params: Promise<{
