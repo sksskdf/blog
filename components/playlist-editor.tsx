@@ -139,7 +139,6 @@ export default function PlaylistEditor() {
   return (
     <div className={styles.editorContainer}>
       <div className={styles.editorHeader}>
-        <h3>플레이리스트 관리</h3>
         <button onClick={handleAdd} className={styles.addButton}>
           + 곡 추가
         </button>

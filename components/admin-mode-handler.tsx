@@ -92,34 +92,19 @@ export default function AdminModeHandler() {
   return (
     <>
       <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-          zIndex: 1000,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
+        className="fixed inset-0 bg-black/80 z-[1000] flex items-center justify-center"
         onClick={handleCancel}
       >
         <div
-          style={{
-            backgroundColor: "white",
-            padding: "2rem",
-            borderRadius: "8px",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            minWidth: "300px",
-            maxWidth: "400px",
-          }}
+          className="bg-dark-card border border-dark-border rounded-lg shadow-lg min-w-[300px] max-w-[400px] p-8"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={handleKeyDown}
         >
+          <h2 className="text-xl font-bold mb-4 text-dark-text font-mono">
+            admin_mode
+          </h2>
           <form onSubmit={handlePasswordSubmit}>
-            <div style={{ marginBottom: "1rem" }}>
+            <div className="mb-4">
               <input
                 id="admin-password"
                 type="password"
@@ -129,60 +114,27 @@ export default function AdminModeHandler() {
                   setError("");
                 }}
                 autoFocus
-                style={{
-                  width: "100%",
-                  padding: "0.5rem",
-                  border: error ? "2px solid #dc3545" : "1px solid #ccc",
-                  borderRadius: "4px",
-                  fontSize: "1rem",
-                  boxSizing: "border-box",
-                }}
+                className={`w-full px-3 py-2 bg-dark-bg border ${
+                  error
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-dark-border-subtle focus:border-brand-green"
+                } rounded text-dark-text font-mono text-sm outline-none transition-colors`}
               />
               {error && (
-                <p
-                  style={{
-                    color: "#dc3545",
-                    margin: "0.5rem 0 0 0",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  {error}
-                </p>
+                <p className="text-red-500 mt-2 text-sm font-mono">{error}</p>
               )}
             </div>
-            <div
-              style={{
-                display: "flex",
-                gap: "0.5rem",
-                justifyContent: "flex-end",
-              }}
-            >
+            <div className="flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={handleCancel}
-                style={{
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "#6c757d",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
-                }}
+                className="px-4 py-2 bg-transparent border border-dark-border-subtle rounded cursor-pointer text-sm font-mono text-dark-muted transition-all duration-200 hover:border-dark-border hover:text-dark-text"
               >
                 취소
               </button>
               <button
                 type="submit"
-                style={{
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "#0070f3",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
-                }}
+                className="px-4 py-2 bg-brand-green text-dark-card border border-brand-green rounded cursor-pointer text-sm font-mono transition-all duration-200 hover:bg-brand-accent"
               >
                 확인
               </button>

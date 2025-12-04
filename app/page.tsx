@@ -1,48 +1,39 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { remark } from "remark";
-import html from "remark-html";
 import Link from "next/link";
-import PostForm from "../components/post-form";
-import Date from "../components/date";
+
+import { useAdmin } from "../contexts/admin-contexts";
+import { Post, Settings } from "../types";
+import { defaultSettings } from "../lib/settings";
+import { filterPostsByCategory, getCategoryText } from "../lib/utils/category";
 import Layout from "../components/layout";
+import Date from "../components/date";
+import PostForm from "../components/post-form";
 import PlaylistEditor from "../components/playlist-editor";
 import SettingsEditor from "../components/settings-editor";
-import { useAdmin } from "../contexts/admin-contexts";
-import utilStyles from "../styles/utils.module.css";
-import { Post, Settings } from '../types';
 
 export default function Home() {
   const { isAdmin } = useAdmin();
   const [showForm, setShowForm] = useState<boolean>(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [allPostsData, setAllPostsData] = useState<Post[]>([]);
-  const [settings, setSettings] = useState<Settings>({ 
-    name: 'Harry-',
-    siteTitle: "HARRY'S BLOG",
-    subtitle: "Software Developer",
-    description: ''
-  });
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [subtitleHtml, setSubtitleHtml] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [showPlaylistEditor, setShowPlaylistEditor] = useState<boolean>(false);
-  const [showSettingsEditor, setShowSettingsEditor] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showPlaylistEditor, setShowPlaylistEditor] = useState(false);
+  const [showSettingsEditor, setShowSettingsEditor] = useState(false);
 
   useEffect(() => {
     // 데이터 로드
     const loadData = async () => {
       try {
-        // 방문자수 증가
-        await fetch("/api/visitor-stats", { method: "GET" });
-
-        // 게시글 및 설정 로드
-        const [postsRes, settingsRes] = await Promise.all([
-          fetch("/api/posts"),
-          fetch("/api/settings"),
-        ]);
+        // 포스트 리스트 먼저 로드 (우선순위 높음)
+        const postsRes = await fetch("/api/posts", {
+          next: { revalidate: 60 },
+          cache: "force-cache",
+        });
 
         if (postsRes.ok) {
           const posts = (await postsRes.json()) as Post[];
@@ -50,15 +41,29 @@ export default function Home() {
           setFilteredPosts(posts);
         }
 
-        if (settingsRes.ok) {
-          const settingsData = (await settingsRes.json()) as Settings;
-          setSettings(settingsData);
-          const subtitle = settingsData.subtitle || "Software Developer";
-          setSubtitleHtml(subtitle);
-        }
+        // 포스트 로드 완료 후 로딩 상태 해제 (포스트가 먼저 표시되도록)
+        setIsLoading(false);
+
+        // 설정과 방문자수는 백그라운드에서 처리 (포스트 표시를 블로킹하지 않음)
+        Promise.all([
+          fetch("/api/settings", {
+            next: { revalidate: 300 },
+            cache: "force-cache",
+          }),
+          fetch("/api/visitor-stats", { method: "GET" }).catch(() => {
+            // 방문자수 증가 실패는 무시
+          }),
+        ]).then(([settingsRes]) => {
+          if (settingsRes.ok) {
+            settingsRes.json().then((settingsData: Settings) => {
+              setSettings(settingsData);
+            });
+          } else {
+            setSettings(defaultSettings);
+          }
+        });
       } catch (error) {
         console.error("Error loading data:", error);
-      } finally {
         setIsLoading(false);
       }
     };
@@ -66,31 +71,14 @@ export default function Home() {
     loadData();
   }, []);
 
-  useEffect(() => {
-    // subtitle을 마크다운으로 파싱
-    const parseSubtitle = async () => {
-      const currentSubtitle = settings.subtitle || "Software Developer";
-      if (currentSubtitle) {
-        try {
-          const processed = await remark().use(html).process(currentSubtitle);
-          setSubtitleHtml(processed.toString());
-        } catch (error) {
-          console.error("Error parsing subtitle:", error);
-          setSubtitleHtml(currentSubtitle);
-        }
-      } else {
-        setSubtitleHtml("");
-      }
-    };
-    parseSubtitle();
-  }, [settings.subtitle]);
-
-  // 설정 편집 후 데이터 다시 로드
+  // 설정 편집 후 데이터 다시 로드 (캐시 무효화)
   useEffect(() => {
     if (!showSettingsEditor) {
       const reloadSettings = async () => {
         try {
-          const response = await fetch("/api/settings");
+          const response = await fetch("/api/settings", {
+            cache: "no-store", // 최신 데이터를 가져오기 위해 캐시 무효화
+          });
           if (response.ok) {
             const settingsData = (await response.json()) as Settings;
             setSettings(settingsData);
@@ -104,29 +92,7 @@ export default function Home() {
   }, [showSettingsEditor]);
 
   useEffect(() => {
-    // 카테고리 필터링
-    if (!selectedCategory) {
-      setFilteredPosts(allPostsData);
-      return;
-    }
-
-    const filtered = allPostsData.filter((post) => {
-      if (!post.category) return false;
-
-      // 배열인 경우
-      if (Array.isArray(post.category)) {
-        return post.category.includes(selectedCategory);
-      }
-
-      // 문자열인 경우 (쉼표로 구분된 태그)
-      if (typeof post.category === "string") {
-        const tags = post.category.split(",").map((tag) => tag.trim());
-        return tags.includes(selectedCategory);
-      }
-
-      return post.category === selectedCategory;
-    });
-
+    const filtered = filterPostsByCategory(allPostsData, selectedCategory);
     setFilteredPosts(filtered);
   }, [selectedCategory, allPostsData]);
 
@@ -241,36 +207,24 @@ export default function Home() {
   };
 
   const latestDate = getLatestDate();
-  const subtitle = settings.subtitle || "Software Developer";
 
-  if (isLoading) {
+  if (isLoading || !settings) {
     return (
       <Layout
         home
-        settings={settings}
+        settings={null}
         posts={[]}
         onCategoryFilter={handleCategoryFilter}
         selectedCategory={selectedCategory}
       >
         {/* 차트 막대 그래프 스타일 */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "center",
-            gap: "0.5rem",
-            height: "60px",
-            marginTop: "10rem",
-          }}
-        >
+        <div className="flex items-end justify-center gap-2 h-[60px] mt-40">
           {[1, 2, 3, 4, 5, 4, 3, 2].map((height, index) => (
             <div
               key={index}
+              className="w-2 bg-brand-green rounded-t"
               style={{
-                width: "8px",
                 height: `${height * 12}px`,
-                backgroundColor: "#0070f3",
-                borderRadius: "4px 4px 0 0",
                 animation: `chartBar ${
                   0.6 + index * 0.1
                 }s ease-in-out infinite`,
@@ -294,15 +248,7 @@ export default function Home() {
       {showForm && (
         <>
           <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              zIndex: 999,
-            }}
+            className="fixed inset-0 bg-black/50 z-[999]"
             onClick={handleCancelForm}
           />
           <PostForm
@@ -312,168 +258,115 @@ export default function Home() {
           />
         </>
       )}
-      <section className={utilStyles.headingMd}>
-        <div style={{ position: "relative", display: "inline-block" }}>
-          {subtitleHtml ? (
-            <div dangerouslySetInnerHTML={{ __html: subtitleHtml }} />
-          ) : (
-            <p>{subtitle}</p>
-          )}
-        </div>
-      </section>
-      <section className={`${utilStyles.headingMd} ${utilStyles.padding1px}`}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <h2 className={utilStyles.headingLg}>Posts</h2>
-          {isAdmin && (
-            <button
-              onClick={handleAddPost}
-              style={{
-                padding: "0.5rem 1rem",
-                backgroundColor: "transparent",
-                color: "inherit",
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontSize: "0.875rem",
-              }}
+      <div className="border-t border-dark-border divide-y divide-dark-border">
+        {filteredPosts.map(({ id, date, title, category }) => {
+          const isNew = latestDate && date === latestDate;
+          const categoryText = getCategoryText(category);
+
+          return (
+            <article
+              key={id}
+              className="group relative p-6 md:p-8 hover:bg-dark-card transition-colors duration-300 cursor-pointer"
             >
-              + 게시글 추가
-            </button>
-          )}
-        </div>
-        <ul className={utilStyles.list}>
-          {filteredPosts.map(({ id, date, title }) => {
-            const isNew = latestDate && date === latestDate;
-            return (
-              <li className={utilStyles.listItem} key={id}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <div style={{ flex: 1, position: "relative" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                        flexWrap: "wrap",
-                      }}
+              <div className="flex flex-row items-baseline gap-8 mb-3">
+                <span className="font-mono text-brand-green text-xs tracking-wider shrink-0">
+                  <Date dateString={date} />
+                </span>
+                <div className="flex gap-2">
+                  <span className="px-2 py-0.5 border border-dark-border-subtle rounded text-[10px] font-mono text-dark-muted uppercase tracking-widest">
+                    {categoryText}
+                  </span>
+                </div>
+              </div>
+
+              <div className="md:pl-32">
+                <h3 className="text-2xl md:text-4xl font-bold mb-3 leading-tight group-hover:text-brand-green transition-colors">
+                  <Link
+                    href={`/posts/${id}`}
+                    className="hover-underline-animation before:absolute before:inset-0"
+                  >
+                    {title}
+                  </Link>
+                </h3>
+
+                <div className="flex items-center gap-4 text-xs font-mono text-dark-subtle">
+                  {isNew && (
+                    <span
+                      className="inline-flex items-center justify-center text-[0.7rem] font-bold text-dark-card bg-brand-green px-2 py-0.5 rounded-xl leading-tight mr-2"
+                      title="최신 게시글"
                     >
-                      <Link
-                        href={`/posts/${id}`}
-                        style={{ display: "inline-block" }}
-                      >
-                        {title}
-                      </Link>
-                      {isNew && (
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "0.7rem",
-                            fontWeight: "bold",
-                            color: "#ffffff",
-                            backgroundColor: "#ff4444",
-                            padding: "0.15rem 0.3rem",
-                            borderRadius: "12px",
-                            lineHeight: "1.3",
-                            verticalAlign: "middle",
-                            marginLeft: "0.1rem",
-                          }}
-                          title="최신 게시글"
-                        >
-                          N
-                        </span>
-                      )}
-                    </div>
-                    <small
-                      className={utilStyles.lightText}
-                      style={{ display: "block", marginTop: "0.25rem" }}
-                    >
-                      <Date dateString={date} />
-                    </small>
-                  </div>
-                  {isAdmin && (
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "0.5rem",
-                        marginLeft: "1rem",
-                      }}
-                    >
-                      <button
-                        onClick={() => handleEditPost(id)}
-                        style={{
-                          padding: "0.25rem 0.5rem",
-                          backgroundColor: "transparent",
-                          color: "inherit",
-                          border: "1px solid #ccc",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                          fontSize: "0.75rem",
-                        }}
-                      >
-                        수정
-                      </button>
-                      <button
-                        onClick={() => handleDeletePost(id)}
-                        style={{
-                          padding: "0.25rem 0.5rem",
-                          backgroundColor: "transparent",
-                          color: "inherit",
-                          border: "1px solid #ccc",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                          fontSize: "0.75rem",
-                        }}
-                      >
-                        삭제
-                      </button>
-                    </div>
+                      NEW
+                    </span>
                   )}
                 </div>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+              </div>
+
+              {/* Arrow Icon on Hover - 관리자 모드일 때는 숨김 */}
+              {!isAdmin && (
+              <div className="absolute top-6 right-6 md:top-8 md:right-8 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-brand-green z-10">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    d="M5 12h14M12 5l7 7-7 7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              )}
+
+              {isAdmin && (
+                <div
+                  className="absolute top-6 right-6 md:top-8 md:right-8 flex gap-2 z-20"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => handleEditPost(id)}
+                    className="px-2 py-1 bg-transparent text-dark-muted border border-dark-border-subtle rounded cursor-pointer text-xs font-mono transition-all duration-200 hover:border-brand-green hover:text-brand-green"
+                  >
+                    EDIT
+                  </button>
+                  <button
+                    onClick={() => handleDeletePost(id)}
+                    className="px-2 py-1 bg-transparent text-dark-muted border border-dark-border-subtle rounded cursor-pointer text-xs font-mono transition-all duration-200 hover:border-red-500 hover:text-red-500"
+                  >
+                    DEL
+                  </button>
+                </div>
+              )}
+            </article>
+          );
+        })}
+      </div>
 
       {isAdmin && (
-        <section className={utilStyles.headingMd}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "1rem",
-            }}
+        <div className="p-12 border-t border-dark-border flex justify-center">
+          <button
+            onClick={handleAddPost}
+            className="px-8 py-3 border border-dark-border-subtle hover:border-brand-green hover:text-brand-green transition-colors font-mono text-sm uppercase tracking-widest bg-transparent text-dark-muted cursor-pointer"
           >
-            <h2 className={utilStyles.headingLg}>관리</h2>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            + Add Post
+          </button>
+        </div>
+      )}
+
+      {isAdmin && (
+        <section className="text-lg text-dark-text p-8 md:p-12 border-t border-dark-border">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-dark-text">관리</h2>
+            <div className="flex gap-2">
               <button
                 onClick={() => {
                   setShowPlaylistEditor(!showPlaylistEditor);
                   setShowSettingsEditor(false);
                 }}
-                style={{
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "transparent",
-                  color: "inherit",
-                  border: "1px solid #ccc",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
-                }}
+                className="px-4 py-2 bg-transparent text-dark-text border border-dark-border-subtle rounded cursor-pointer text-sm font-mono transition-all duration-200 hover:border-brand-green hover:text-brand-green"
               >
                 {showPlaylistEditor
                   ? "플레이리스트 편집 숨기기"
@@ -484,15 +377,7 @@ export default function Home() {
                   setShowSettingsEditor(!showSettingsEditor);
                   setShowPlaylistEditor(false);
                 }}
-                style={{
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "transparent",
-                  color: "inherit",
-                  border: "1px solid #ccc",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
-                }}
+                className="px-4 py-2 bg-transparent text-dark-text border border-dark-border-subtle rounded cursor-pointer text-sm font-mono transition-all duration-200 hover:border-brand-green hover:text-brand-green"
               >
                 {showSettingsEditor ? "설정 편집 숨기기" : "설정 편집"}
               </button>

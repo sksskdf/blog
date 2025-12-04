@@ -1,6 +1,6 @@
 .editorContainer {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: #0a0a0a;
+  border: 1px solid #222;
   border-radius: 8px;
   padding: 1.5rem;
   margin: 1rem 0;
@@ -17,27 +17,32 @@
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
+  color: #e5e5e5;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 .addButton {
   padding: 0.5rem 1rem;
-  background: #0070f3;
-  color: white;
+  background: #00ff41;
+  color: #0a0a0a;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.875rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
   transition: background 0.2s;
 }
 
 .addButton:hover {
-  background: #0051cc;
+  background: #39ff14;
 }
 
 .editorForm {
-  background: #f9f9f9;
+  background: #050505;
   padding: 1rem;
   border-radius: 6px;
+  border: 1px solid #222;
   margin-bottom: 1rem;
 }
 
@@ -54,13 +59,23 @@
   gap: 0.25rem;
   font-size: 0.875rem;
   font-weight: 500;
+  color: #e5e5e5;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 .formRow input {
   padding: 0.5rem;
-  border: 1px solid #ccc;
+  border: 1px solid #333;
   border-radius: 4px;
   font-size: 0.875rem;
+  background: #0a0a0a;
+  color: #e5e5e5;
+  transition: border-color 0.2s;
+}
+
+.formRow input:focus {
+  outline: none;
+  border-color: #00ff41;
 }
 
 .formActions {
@@ -76,25 +91,30 @@
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.875rem;
+  font-family: 'JetBrains Mono', monospace;
   transition: all 0.2s;
 }
 
 .cancelButton {
-  background: #f5f5f5;
-  color: #333;
+  background: transparent;
+  color: #999;
+  border: 1px solid #333;
 }
 
 .cancelButton:hover {
-  background: #e0e0e0;
+  background: #111;
+  border-color: #222;
+  color: #e5e5e5;
 }
 
 .saveButton {
-  background: #0070f3;
-  color: white;
+  background: #00ff41;
+  color: #0a0a0a;
+  font-weight: 600;
 }
 
 .saveButton:hover {
-  background: #0051cc;
+  background: #39ff14;
 }
 
 .playlistList {
@@ -108,9 +128,15 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #222;
   border-radius: 6px;
-  background: #fafafa;
+  background: #050505;
+  transition: all 0.2s;
+}
+
+.playlistItem:hover {
+  background: #111;
+  border-color: #333;
 }
 
 .playlistItemCover {
@@ -119,7 +145,7 @@
   border-radius: 4px;
   overflow: hidden;
   flex-shrink: 0;
-  background: #e0e0e0;
+  background: #222;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -148,22 +174,23 @@
 .playlistItemTitle {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #333;
+  color: #e5e5e5;
   margin-bottom: 0.25rem;
 }
 
 .playlistItemArtist {
   font-size: 0.75rem;
-  color: #666;
+  color: #999;
   margin-bottom: 0.25rem;
 }
 
 .playlistItemUrl {
   font-size: 0.7rem;
-  color: #999;
+  color: #666;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 .playlistItemActions {
@@ -174,24 +201,26 @@
 .editButton,
 .deleteButton {
   padding: 0.375rem 0.75rem;
-  border: 1px solid #ccc;
+  border: 1px solid #333;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.75rem;
-  background: white;
+  background: transparent;
+  color: #999;
+  font-family: 'JetBrains Mono', monospace;
   transition: all 0.2s;
 }
 
 .editButton:hover {
-  background: #f5f5f5;
-  border-color: #0070f3;
-  color: #0070f3;
+  background: #111;
+  border-color: #00ff41;
+  color: #00ff41;
 }
 
 .deleteButton:hover {
-  background: #fee;
-  border-color: #dc3545;
-  color: #dc3545;
+  background: #111;
+  border-color: #ff4444;
+  color: #ff4444;
 }
 
 @media (max-width: 768px) {

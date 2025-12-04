@@ -1,11 +1,11 @@
 import { queryOne, query } from './db';
 import { Settings, SettingsRow } from '../types';
 
-const defaultSettings: Settings = {
-  name: 'Harry-',
+export const defaultSettings: Settings = {
+  name: "Harry-",
   siteTitle: "HARRY'S BLOG",
-  subtitle: 'Software Developer',
-  description: '',
+  subtitle: "Programmer",
+  description: "",
 };
 
 export async function getSettings(): Promise<Settings> {

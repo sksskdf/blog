@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ApiResponse, Post } from '../../../types';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function GET(
@@ -13,7 +13,7 @@ export async function GET(
   { params }: RouteParams
 ): Promise<NextResponse<Post | ApiResponse>> {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
@@ -37,7 +37,7 @@ export async function PUT(
   { params }: RouteParams
 ): Promise<NextResponse<ApiResponse>> {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
@@ -68,7 +68,7 @@ export async function DELETE(
   { params }: RouteParams
 ): Promise<NextResponse<ApiResponse>> {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });

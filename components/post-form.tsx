@@ -131,30 +131,21 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      backgroundColor: 'white',
-      borderRadius: '8px',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-      zIndex: 1000,
-      width: '90%',
-      maxWidth: '1200px',
-      maxHeight: '90vh',
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      <div style={{ padding: '1.5rem', borderBottom: '1px solid #e0e0e0' }}>
-        <h2 style={{ margin: 0 }}>{post ? '게시글 수정' : '새 게시글 추가'}</h2>
+    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-dark-card border border-dark-border rounded-lg shadow-lg z-[1000] w-[90%] max-w-[1200px] max-h-[90vh] flex flex-col">
+      <div className="p-6 border-b border-dark-border">
+        <h2 className="m-0 text-xl font-bold text-dark-text font-mono">
+          {post ? '게시글 수정' : '새 게시글 추가'}
+        </h2>
       </div>
-      
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid #e0e0e0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col flex-1 overflow-hidden"
+      >
+        <div className="p-6 border-b border-dark-border grid grid-cols-1 md:grid-cols-2 gap-4">
           {!post && (
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '500' }}>
+              <label className="block mb-2 text-sm font-mono text-dark-muted font-medium">
                 ID (자동 생성되거나 수동 입력):
               </label>
               <input
@@ -163,18 +154,12 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
                 value={formData.id}
                 onChange={handleChange}
                 placeholder="자동 생성됨"
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                  fontSize: '0.875rem',
-                }}
+                className="w-full px-3 py-2 bg-dark-bg border border-dark-border-subtle rounded text-dark-text font-mono text-sm outline-none focus:border-brand-green transition-colors"
               />
             </div>
           )}
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '500' }}>
+            <label className="block mb-2 text-sm font-mono text-dark-muted font-medium">
               제목:
             </label>
             <input
@@ -183,17 +168,11 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
               value={formData.title}
               onChange={handleChange}
               required
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                fontSize: '0.875rem',
-              }}
+              className="w-full px-3 py-2 bg-dark-bg border border-dark-border-subtle rounded text-dark-text font-mono text-sm outline-none focus:border-brand-green transition-colors"
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '500' }}>
+            <label className="block mb-2 text-sm font-mono text-dark-muted font-medium">
               날짜:
             </label>
             <input
@@ -202,17 +181,11 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
               value={formData.date}
               onChange={handleChange}
               required
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                fontSize: '0.875rem',
-              }}
+              className="w-full px-3 py-2 bg-dark-bg border border-dark-border-subtle rounded text-dark-text font-mono text-sm outline-none focus:border-brand-green transition-colors"
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '500' }}>
+            <label className="block mb-2 text-sm font-mono text-dark-muted font-medium">
               카테고리 (쉼표로 구분):
             </label>
             <input
@@ -221,25 +194,19 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
               value={formData.category}
               onChange={handleChange}
               placeholder="예: 개발, 블로그, 일기 (쉼표로 구분)"
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                fontSize: '0.875rem',
-              }}
+              className="w-full px-3 py-2 bg-dark-bg border border-dark-border-subtle rounded text-dark-text font-mono text-sm outline-none focus:border-brand-green transition-colors"
             />
-            <small style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem', display: 'block' }}>
+            <small className="text-xs text-dark-subtle mt-1 block font-mono">
               여러 태그를 쉼표로 구분하여 입력하세요
             </small>
           </div>
         </div>
 
         {/* 에디터와 프리뷰 동시 동작 */}
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        <div className="flex-1 flex overflow-hidden">
           {/* 에디터 영역 */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid #e0e0e0' }}>
-            <div style={{ padding: '0.75rem', backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0', fontSize: '0.875rem', fontWeight: '500' }}>
+          <div className="flex-1 flex flex-col border-r border-dark-border">
+            <div className="px-3 py-2 bg-dark-gray border-b border-dark-border text-sm font-mono font-medium text-dark-text">
               편집
             </div>
             <textarea
@@ -249,67 +216,38 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
               onChange={handleContentChange}
               required
               placeholder="마크다운을 입력하세요..."
-              style={{
-                flex: 1,
-                width: '100%',
-                padding: '1rem',
-                border: 'none',
-                outline: 'none',
-                fontFamily: 'monospace',
-                fontSize: '0.875rem',
-                lineHeight: '1.6',
-                resize: 'none',
-              }}
+              className="flex-1 w-full p-4 border-none outline-none font-mono text-sm leading-relaxed resize-none bg-dark-bg text-dark-text"
             />
           </div>
 
           {/* 프리뷰 영역 - 실시간 업데이트 */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: '0.75rem', backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0', fontSize: '0.875rem', fontWeight: '500' }}>
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="px-3 py-2 bg-dark-gray border-b border-dark-border text-sm font-mono font-medium text-dark-text">
               프리뷰
             </div>
             <div
               ref={previewRef}
-              style={{
-                flex: 1,
-                padding: '1rem',
-                overflowY: 'auto',
-                fontSize: '0.875rem',
-                lineHeight: '1.6',
-              }}
-              dangerouslySetInnerHTML={{ 
-                __html: previewHtml || '<p style="color: #999; margin: 0;">마크다운을 입력하면 프리뷰가 실시간으로 표시됩니다...</p>' 
+              className="flex-1 p-4 overflow-y-auto text-sm leading-relaxed text-dark-text bg-dark-bg"
+              dangerouslySetInnerHTML={{
+                __html:
+                  previewHtml ||
+                  '<p style="color: #999; margin: 0;">마크다운을 입력하면 프리뷰가 실시간으로 표시됩니다...</p>',
               }}
             />
           </div>
         </div>
 
-        <div style={{ padding: '1rem', borderTop: '1px solid #e0e0e0', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+        <div className="p-4 border-t border-dark-border flex gap-2 justify-end">
           <button
             type="button"
             onClick={onCancel}
-            style={{
-              padding: '0.5rem 1rem',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              backgroundColor: '#f5f5f5',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-            }}
+            className="px-4 py-2 border border-dark-border-subtle rounded bg-transparent cursor-pointer text-sm font-mono text-dark-muted transition-all duration-200 hover:border-dark-border hover:text-dark-text"
           >
             취소
           </button>
           <button
             type="submit"
-            style={{
-              padding: '0.5rem 1rem',
-              border: 'none',
-              borderRadius: '4px',
-              backgroundColor: '#0070f3',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-            }}
+            className="px-4 py-2 border-none rounded bg-brand-green text-dark-card cursor-pointer text-sm font-mono transition-all duration-200 hover:bg-brand-accent"
           >
             저장
           </button>

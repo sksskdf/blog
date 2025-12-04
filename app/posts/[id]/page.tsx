@@ -1,20 +1,21 @@
+import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Layout from "../../../components/layout";
+
+import { Post, Settings } from '../../../types';
 import { getPostData } from "../../../lib/posts";
 import { getSettings } from "../../../lib/settings";
+import Layout from "../../../components/layout";
 import Date from "../../../components/date";
-import utilStyles from "../../../styles/utils.module.css";
-import { Metadata } from 'next';
-import { Post, Settings } from '../../../types';
 
 interface PostPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
-  const postData = await getPostData(params.id);
+  const { id } = await params;
+  const postData = await getPostData(id);
   
   if (!postData) {
     return {
@@ -27,8 +28,9 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   };
 }
 
-export default async function Post({ params }: PostPageProps) {
-  const postData = await getPostData(params.id);
+export default async function PostPage({ params }: PostPageProps) {
+  const { id } = await params;
+  const postData = await getPostData(id);
   
   if (!postData) {
     notFound();
@@ -38,14 +40,18 @@ export default async function Post({ params }: PostPageProps) {
 
   return (
     <Layout settings={settings}>
-      <article>
-        <h1 className={utilStyles.headingXl}>{postData.title}</h1>
-        <div className={utilStyles.lightText}>
+      <article className="p-8 md:p-12">
+        <h1 className="text-3xl md:text-4xl font-bold mb-4 text-dark-text leading-tight">
+          {postData.title}
+        </h1>
+        <div className="text-dark-muted font-mono text-sm mb-6">
           <Date dateString={postData.date} />
         </div>
-        <br />
         {postData.contentHtml && (
-          <div dangerouslySetInnerHTML={{ __html: postData.contentHtml }} />
+          <div
+            className="prose prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: postData.contentHtml }}
+          />
         )}
       </article>
     </Layout>
