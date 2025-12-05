@@ -261,13 +261,15 @@ export default function MusicPlayer({
         >
           <div
             ref={playerRef}
-            className="relative w-full max-w-[480px] md:w-80 md:max-w-[calc(100vw-40px)] bg-dark-card border border-dark-border rounded-t-2xl md:rounded-xl shadow-lg p-3 md:p-6 mb-0 md:mb-20 md:mr-5 flex flex-col gap-3 md:gap-4 text-dark-text animate-slide-up max-h-[75vh] overflow-y-auto"
+            className="relative w-full max-w-[480px] md:w-80 md:max-w-[calc(100vw-40px)] bg-dark-card border border-dark-border rounded-t-2xl md:rounded-xl shadow-lg p-3 md:p-6 mb-0 md:mb-20 md:mr-5 flex flex-col gap-3 md:gap-4 text-dark-text animate-slide-up max-h-[75vh] overflow-y-auto overflow-x-hidden"
             onClick={(e) => e.stopPropagation()}
             style={{
               transform: swipe.swipeTransform,
               transition: swipe.swipeTransition,
               opacity: swipe.swipeOpacity,
               WebkitOverflowScrolling: "touch",
+              touchAction: "pan-y",
+              overscrollBehaviorX: "none",
             }}
           >
             <div
@@ -286,10 +288,10 @@ export default function MusicPlayer({
                 />
                 <button
                   onClick={onClose}
-                  className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-dark-muted hover:text-dark-text transition-colors cursor-pointer p-1 rounded-full"
+                  className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-dark-muted hover:text-dark-text transition-colors cursor-pointer p-[0.15rem] rounded-full"
                   aria-label="플레이어 닫기"
                 >
-                  <span className="material-icons text-xl">close</span>
+                  <span className="material-icons text-xl !flex">close</span>
                 </button>
               </div>
             )}
@@ -329,7 +331,7 @@ export default function MusicPlayer({
             <div className="flex justify-center items-center gap-4">
               <button
                 onClick={navigation.handlePrevious}
-                className="bg-transparent border border-dark-border-subtle rounded-full w-12 h-12 flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-dark-gray hover:border-brand-green hover:text-brand-green text-dark-text disabled:opacity-50 disabled:cursor-not-allowed p-0"
+                className="pt-1 bg-transparent border border-dark-border-subtle rounded-full w-12 h-12 flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-dark-gray hover:border-brand-green hover:text-brand-green text-dark-text disabled:opacity-50 disabled:cursor-not-allowed p-0"
                 disabled={playlist.length <= 1}
                 aria-label="이전 트랙"
               >
@@ -339,7 +341,7 @@ export default function MusicPlayer({
               </button>
               <button
                 onClick={controls.handlePlayPause}
-                className="w-14 h-14 bg-brand-green text-dark-card border-none rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-brand-accent p-0"
+                className="pt-1 w-14 h-14 bg-brand-green text-dark-card border-none rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-brand-accent p-0"
                 aria-label={isPlaying ? "일시정지" : "재생"}
               >
                 <span className="material-icons text-3xl flex items-center justify-center leading-none">
@@ -348,7 +350,7 @@ export default function MusicPlayer({
               </button>
               <button
                 onClick={navigation.handleNext}
-                className="bg-transparent border border-dark-border-subtle rounded-full w-12 h-12 flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-dark-gray hover:border-brand-green hover:text-brand-green text-dark-text disabled:opacity-50 disabled:cursor-not-allowed p-0"
+                className="pt-1 bg-transparent border border-dark-border-subtle rounded-full w-12 h-12 flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-dark-gray hover:border-brand-green hover:text-brand-green text-dark-text disabled:opacity-50 disabled:cursor-not-allowed p-0"
                 disabled={playlist.length <= 1}
                 aria-label="다음 트랙"
               >
@@ -380,27 +382,18 @@ export default function MusicPlayer({
                   className={styles.volumeBar}
                   style={{ touchAction: "pan-x" }}
                 />
-                <span className="text-xs text-dark-muted w-10 text-right font-mono">
+                <span className="text-xs text-dark-muted w-10 font-mono">
                   {Math.round(volume * 100)}%
                 </span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 md:mt-0 mt-2">
-                <span className="text-base w-6">🔊</span>
-                <div className="flex-1 text-xs text-dark-muted font-mono text-center">
-                  기기 볼륨 사용
-                </div>
-              </div>
+              <div className="flex items-center gap-2 md:mt-0 mt-2"></div>
             )}
 
-            <div className="text-center pt-2 border-t border-dark-border">
+            <div className="text-center pt-2">
               <button
                 onClick={() => setShowPlaylist(!showPlaylist)}
-                className={`bg-transparent border rounded-full w-10 h-10 p-0 cursor-pointer flex items-center justify-center mx-auto transition-all duration-200 ${
-                  showPlaylist
-                    ? "border-brand-green text-brand-green bg-dark-gray"
-                    : "border-dark-border-subtle text-dark-muted hover:bg-dark-gray hover:border-brand-green hover:text-brand-green"
-                }`}
+                className="pt-1 bg-transparent border rounded-full w-10 h-10 p-0 cursor-pointer flex items-center justify-center mx-auto transition-all duration-200 border-dark-border-subtle text-dark-muted hover:bg-dark-gray hover:border-brand-green hover:text-brand-green"
                 title={
                   showPlaylist
                     ? "플레이리스트 숨기기"
@@ -419,16 +412,12 @@ export default function MusicPlayer({
             {showPlaylist && (
               <div
                 ref={playlistContainerRef}
-                className="mt-2 md:mt-3 border-t border-dark-border pt-2 md:pt-3 flex-1 min-h-[40vh] overflow-y-auto md:flex-none md:max-h-[300px]"
+                className="mt-2 md:mt-3 border-t border-dark-border pt-2 md:pt-3 flex-1 min-h-[40vh] overflow-y-auto overflow-x-hidden md:flex-none md:max-h-[300px]"
+                style={{ touchAction: "pan-y", overscrollBehaviorX: "none" }}
               >
-                <div className="mb-2 md:mb-3">
-                  <h4 className="text-sm font-semibold text-dark-text font-mono m-0">
-                    플레이리스트
-                  </h4>
-                </div>
+                <div className="mb-2 md:mb-3"></div>
                 <div className="flex flex-col gap-2">
                   {playlist.map((track, index) => {
-                    const trackDuration = getTrackDuration(track);
                     const isCurrentTrack =
                       index === navigation.currentTrackIndex;
 

@@ -91,11 +91,11 @@
 
   /* 마크다운 헤딩 스타일 */
   .prose h1 {
-    @apply text-2xl md:text-3xl font-bold mt-6 mb-3 text-dark-text leading-tight;
+    @apply text-2xl md:text-3xl font-bold mt-8 mb-3 text-dark-text leading-tight;
   }
 
   .prose h2 {
-    @apply text-xl md:text-2xl font-bold mt-5 mb-2 text-dark-text leading-tight;
+    @apply text-xl md:text-2xl font-bold mt-8 mb-2 text-dark-text leading-tight;
   }
 
   .prose h3 {
@@ -152,7 +152,7 @@
   }
 
   .prose hr {
-    @apply border-dark-border my-8;
+    @apply border-dark-border mt-3 mb-1;
   }
 
   .prose table {

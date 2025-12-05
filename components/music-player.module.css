@@ -32,22 +32,20 @@
 /* Volume Bar 스타일 */
 .volumeBar {
   flex: 1;
-  height: 4px;
+  height: 1px;
   -webkit-appearance: none;
   appearance: none;
   background: #222;
   border-radius: 2px;
   outline: none;
   cursor: pointer;
-  min-height: 44px; /* 모바일 터치 영역 확대 */
-  padding: 20px 0; /* 터치 영역 확대 */
 }
 
 .volumeBar::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 5px;
+  height: 5px;
   background: #00ff41;
   border-radius: 50%;
   cursor: pointer;
@@ -62,22 +60,4 @@
   cursor: pointer;
   border: none;
   box-shadow: 0 0 0 2px rgba(0, 255, 65, 0.2);
-}
-
-/* 모바일에서 더 큰 터치 영역 */
-@media (max-width: 768px) {
-  .volumeBar {
-    min-height: 48px;
-    padding: 22px 0;
-  }
-
-  .volumeBar::-webkit-slider-thumb {
-    width: 24px;
-    height: 24px;
-  }
-
-  .volumeBar::-moz-range-thumb {
-    width: 24px;
-    height: 24px;
-  }
 }
