@@ -355,7 +355,17 @@ export default function MusicPlayer({
                 step="0.01"
                 value={volume}
                 onChange={controls.handleVolumeChange}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                }}
+                onTouchMove={(e) => {
+                  e.stopPropagation();
+                }}
+                onTouchEnd={(e) => {
+                  e.stopPropagation();
+                }}
                 className={styles.volumeBar}
+                style={{ touchAction: "pan-x" }}
               />
               <span className="text-xs text-dark-muted w-10 text-right font-mono">
                 {Math.round(volume * 100)}%

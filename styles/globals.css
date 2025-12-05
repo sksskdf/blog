@@ -8,6 +8,8 @@
     overflow-y: hidden;
     height: 100%;
     -webkit-overflow-scrolling: touch;
+    /* 모바일에서 스크롤 성능 최적화 */
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -24,10 +26,16 @@
     overflow-y: hidden;
     height: 100%;
     -webkit-overflow-scrolling: touch;
+    /* 모바일에서 스크롤 성능 최적화 */
+    -webkit-tap-highlight-color: transparent;
+    /* 모바일에서 스크롤 부드럽게 */
+    overscroll-behavior-y: contain;
   }
 
   #__next {
     height: 100%;
+    /* 모바일에서 스크롤 최적화 */
+    -webkit-overflow-scrolling: touch;
   }
 
   ::selection {

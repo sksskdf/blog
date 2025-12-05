@@ -35,8 +35,12 @@ export default function Layout({
       document.body.style.overflowX = "hidden";
       document.documentElement.style.overflowX = "hidden";
       // 세로 스크롤 방지 (사이드바 뒤 콘텐츠 스크롤 방지)
-      document.body.style.overflowY = "hidden";
-      document.documentElement.style.overflowY = "hidden";
+      // 모바일에서는 메인 콘텐츠 영역의 스크롤만 제어
+      const isMobile = window.innerWidth < 1024;
+      if (!isMobile) {
+        document.body.style.overflowY = "hidden";
+        document.documentElement.style.overflowY = "hidden";
+      }
     } else {
       // 원래 상태로 복구
       document.body.style.overflowX = "";

@@ -13,6 +13,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: siteTitle,
+    viewport: {
+      width: "device-width",
+      initialScale: 1,
+      maximumScale: 5,
+      userScalable: true,
+    },
     openGraph: {
       title: siteTitle,
       description: "Learn how to build a personal website using Next.js",
