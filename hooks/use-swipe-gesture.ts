@@ -114,7 +114,7 @@ export function useSwipeGesture({
           );
           swipeIndicator.removeEventListener("touchend", touchEndHandler);
         } catch (error) {
-          console.warn("Error removing touch event listeners:", error);
+          // Error removing touch event listeners
         }
       }
     };

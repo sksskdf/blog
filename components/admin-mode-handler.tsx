@@ -30,7 +30,7 @@ export default function AdminModeHandler() {
           }
         });
       } catch (error) {
-        console.error("Failed to load hotkeys-js:", error);
+        // Hotkeys library failed to load
       }
     };
 
@@ -67,7 +67,7 @@ export default function AdminModeHandler() {
         setPassword("");
       }
     } catch (err) {
-      console.error("Failed to verify admin password:", err);
+      // Admin verification failed
       setError("비밀번호 검증 중 문제가 발생했습니다.");
       setPassword("");
     }

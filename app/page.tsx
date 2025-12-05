@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-
 import { useAdmin } from "../contexts/admin-contexts";
 import { Post, Settings } from "../types";
 import { defaultSettings } from "../lib/settings";
@@ -15,86 +14,80 @@ import SettingsEditor from "../components/settings-editor";
 
 export default function Home() {
   const { isAdmin } = useAdmin();
-  const [showForm, setShowForm] = useState<boolean>(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [allPostsData, setAllPostsData] = useState<Post[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPlaylistEditor, setShowPlaylistEditor] = useState(false);
   const [showSettingsEditor, setShowSettingsEditor] = useState(false);
+  const [visitorCount, setVisitorCount] = useState<number | null>(null);
+
+  const filteredPosts = useMemo(
+    () => filterPostsByCategory(allPostsData, selectedCategory),
+    [allPostsData, selectedCategory]
+  );
 
   useEffect(() => {
-
     const loadData = async () => {
       try {
-
-        const postsRes = await fetch("/api/posts", {
-          next: { revalidate: 60 },
-          cache: "force-cache",
-        });
-
-        if (postsRes.ok) {
-          const posts = (await postsRes.json()) as Post[];
-          setAllPostsData(posts);
-          setFilteredPosts(posts);
-        }
-
-
-        setIsLoading(false);
-
-
-        Promise.all([
+        const [postsRes, settingsRes, visitorRes] = await Promise.all([
+          fetch("/api/posts", {
+            next: { revalidate: 60 },
+            cache: "force-cache",
+          }),
           fetch("/api/settings", {
             next: { revalidate: 300 },
             cache: "force-cache",
           }),
-          fetch("/api/visitor-stats", { method: "GET" }).catch(() => {
+          isAdmin
+            ? fetch("/api/visitor-stats").catch(() => null)
+            : Promise.resolve(null),
+        ]);
 
-          }),
-        ]).then(([settingsRes]) => {
-          if (settingsRes.ok) {
-            settingsRes.json().then((settingsData: Settings) => {
-              setSettings(settingsData);
-            });
-          } else {
-            setSettings(defaultSettings);
-          }
-        });
+        if (postsRes.ok) {
+          const posts = (await postsRes.json()) as Post[];
+          setAllPostsData(posts);
+        }
+
+        if (settingsRes.ok) {
+          const settingsData = (await settingsRes.json()) as Settings;
+          setSettings(settingsData);
+        } else {
+          setSettings(defaultSettings);
+        }
+
+        if (visitorRes?.ok) {
+          const visitorData = (await visitorRes.json()) as { count: number };
+          setVisitorCount(visitorData.count);
+        }
+
+        setIsLoading(false);
       } catch (error) {
-        console.error("Error loading data:", error);
         setIsLoading(false);
       }
     };
 
     loadData();
-  }, []);
-
+  }, [isAdmin]);
 
   useEffect(() => {
     if (!showSettingsEditor) {
       const reloadSettings = async () => {
         try {
-          const response = await fetch("/api/settings", {
-            cache: "no-store", // 최신 데이터를 가져오기 위해 캐시 무효화
-          });
+          const response = await fetch("/api/settings", { cache: "no-store" });
           if (response.ok) {
             const settingsData = (await response.json()) as Settings;
             setSettings(settingsData);
           }
         } catch (error) {
-          console.error("Error reloading settings:", error);
+          // Settings reload failed silently
         }
       };
       reloadSettings();
     }
   }, [showSettingsEditor]);
-
-  useEffect(() => {
-    const filtered = filterPostsByCategory(allPostsData, selectedCategory);
-    setFilteredPosts(filtered);
-  }, [selectedCategory, allPostsData]);
 
   const handleCategoryFilter = (category: string | null) => {
     setSelectedCategory(category);
@@ -118,7 +111,6 @@ export default function Home() {
         alert("게시글을 불러오는데 실패했습니다.");
       }
     } catch (error) {
-      console.error("Error fetching post:", error);
       alert("게시글을 불러오는데 실패했습니다.");
     }
   };
@@ -140,7 +132,6 @@ export default function Home() {
         alert("게시글 삭제에 실패했습니다.");
       }
     } catch (error) {
-      console.error("Error deleting post:", error);
       alert("게시글 삭제에 실패했습니다.");
     }
   };
@@ -185,12 +176,11 @@ export default function Home() {
           const error = await response.json();
           errorMessage = error.error || errorMessage;
         } catch (e) {
-
+          // Error parsing response
         }
         alert(`오류: ${errorMessage}`);
       }
     } catch (error) {
-      console.error("Error saving post:", error);
       alert("게시글 저장에 실패했습니다.");
     }
   };
@@ -200,13 +190,7 @@ export default function Home() {
     setEditingPost(null);
   };
 
-
-  const getLatestDate = (): string | null => {
-    if (allPostsData.length === 0) return null;
-    return allPostsData[0].date;
-  };
-
-  const latestDate = getLatestDate();
+  const latestDate = allPostsData.length > 0 ? allPostsData[0].date : null;
 
   if (isLoading || !settings) {
     return (
@@ -394,6 +378,16 @@ export default function Home() {
               </button>
             </div>
           </div>
+          {visitorCount !== null && (
+            <div className="mb-4 p-4 bg-dark-card border border-dark-border rounded">
+              <div className="text-sm font-mono text-dark-muted mb-1">
+                오늘 방문자수
+              </div>
+              <div className="text-2xl font-bold text-brand-green">
+                {visitorCount.toLocaleString()}
+              </div>
+            </div>
+          )}
           {showPlaylistEditor && <PlaylistEditor />}
           {showSettingsEditor && <SettingsEditor />}
         </section>

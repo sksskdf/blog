@@ -58,7 +58,7 @@ export function usePlayerControls({
     } else {
       if (audioPlayer) {
         if (isPlaying) {
-          audioPlayer.play().catch(console.error);
+          audioPlayer.play().catch(() => {});
         } else {
           audioPlayer.pause();
         }

@@ -61,7 +61,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
           }
         }
       } catch (error) {
-        console.error("Error loading playlist:", error);
+        // Failed to load playlist
       } finally {
         setIsLoading(false);
       }

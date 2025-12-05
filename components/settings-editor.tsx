@@ -27,7 +27,6 @@ export default function SettingsEditor() {
             .process(settings.description);
           setDescriptionHtml(processed.toString());
         } catch (error) {
-          console.error("Error parsing description:", error);
           setDescriptionHtml(settings.description);
         }
       } else {
@@ -47,7 +46,6 @@ export default function SettingsEditor() {
         setSettings(defaultSettings);
       }
     } catch (error) {
-      console.error("Error loading settings:", error);
       setSettings(defaultSettings);
     } finally {
       setIsLoading(false);
@@ -76,7 +74,6 @@ export default function SettingsEditor() {
         alert(`오류: ${error.error || "설정 저장에 실패했습니다."}`);
       }
     } catch (error) {
-      console.error("Error saving settings:", error);
       alert("설정 저장에 실패했습니다.");
     }
   };

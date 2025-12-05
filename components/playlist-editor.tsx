@@ -31,7 +31,7 @@ export default function PlaylistEditor() {
         setPlaylists(data);
       }
     } catch (error) {
-      console.error('Error loading playlists:', error);
+      // Failed to load playlists
     }
   };
 
@@ -86,7 +86,6 @@ export default function PlaylistEditor() {
         alert('플레이리스트 삭제에 실패했습니다.');
       }
     } catch (error) {
-      console.error('Error deleting playlist:', error);
       alert('플레이리스트 삭제에 실패했습니다.');
     }
   };
@@ -121,7 +120,6 @@ export default function PlaylistEditor() {
         alert(`오류: ${error.error || '플레이리스트 저장에 실패했습니다.'}`);
       }
     } catch (error) {
-      console.error('Error saving playlist:', error);
       alert('플레이리스트 저장에 실패했습니다.');
     }
   };
@@ -198,12 +196,10 @@ export default function PlaylistEditor() {
       const failed = results.filter((r) => r.status === 'rejected');
       
       if (failed.length > 0) {
-        console.error('Some playlist updates failed:', failed);
         alert(`${failed.length}개의 플레이리스트 순서 업데이트에 실패했습니다.`);
         loadPlaylists();
       }
     } catch (error) {
-      console.error('Error updating playlist order:', error);
       alert('플레이리스트 순서 업데이트에 실패했습니다.');
       loadPlaylists();
     }

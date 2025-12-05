@@ -74,7 +74,7 @@ export function useAudioPlayer({
     if (shouldPlayAfterTrackChange.current) {
       const onCanPlay = () => {
         if (audioRef.current && compareUrls(audioRef.current.src, currentTrack.url)) {
-          audioRef.current.play().catch(console.error);
+          audioRef.current.play().catch(() => {});
           onPlayingChange(true);
           shouldPlayAfterTrackChange.current = false;
           audioElement.removeEventListener("canplay", onCanPlay);
@@ -176,7 +176,7 @@ export function useAudioPlayer({
           audio.removeEventListener("ended", handleEnded);
         } catch (error) {
 
-          console.warn("Error removing audio event listeners:", error);
+          // Error removing audio event listeners
         }
       }
     };
@@ -209,7 +209,7 @@ export function useAudioPlayer({
           audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
         } catch (error) {
 
-          console.warn("Error removing audio event listener:", error);
+          // Error removing audio event listener
         }
       }
     };
@@ -249,7 +249,7 @@ export function useAudioPlayer({
         await audioRef.current.play();
         onPlayingChange(true);
       } catch (error) {
-        console.error("Error playing audio:", error);
+        // Error playing audio
       }
     }
   };

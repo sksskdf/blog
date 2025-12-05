@@ -261,7 +261,7 @@ export default function MusicPlayer({
         >
           <div
             ref={playerRef}
-            className="relative w-full max-w-[480px] md:w-80 md:max-w-[calc(100vw-40px)] bg-dark-card border border-dark-border rounded-t-2xl md:rounded-xl shadow-lg p-3 md:p-6 mb-0 md:mb-20 md:mr-5 flex flex-col gap-3 md:gap-4 text-dark-text animate-slide-up max-h-[90vh] overflow-y-auto"
+            className="relative w-full max-w-[480px] md:w-80 md:max-w-[calc(100vw-40px)] bg-dark-card border border-dark-border rounded-t-2xl md:rounded-xl shadow-lg p-3 md:p-6 mb-0 md:mb-20 md:mr-5 flex flex-col gap-3 md:gap-4 text-dark-text animate-slide-up max-h-[75vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
             style={{
               transform: swipe.swipeTransform,
@@ -404,9 +404,9 @@ export default function MusicPlayer({
                 title={
                   showPlaylist
                     ? "플레이리스트 숨기기"
-                    : `플레이리스트 보기 (${navigation.currentTrackIndex + 1} / ${
-                        playlist.length
-                      })`
+                    : `플레이리스트 보기 (${
+                        navigation.currentTrackIndex + 1
+                      } / ${playlist.length})`
                 }
                 aria-label={
                   showPlaylist ? "플레이리스트 숨기기" : "플레이리스트 보기"
@@ -429,7 +429,8 @@ export default function MusicPlayer({
                 <div className="flex flex-col gap-2">
                   {playlist.map((track, index) => {
                     const trackDuration = getTrackDuration(track);
-                    const isCurrentTrack = index === navigation.currentTrackIndex;
+                    const isCurrentTrack =
+                      index === navigation.currentTrackIndex;
 
                     return (
                       <div
