@@ -11,7 +11,6 @@ export default function AutoplayToast({ onAccept, onDecline }: AutoplayToastProp
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // 매번 토스트 표시 (약간의 지연 후)
     const timer = setTimeout(() => {
       setIsVisible(true);
     }, 1000);

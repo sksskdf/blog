@@ -8,7 +8,6 @@ import {
   ReactNode,
   useCallback,
 } from "react";
-import { usePathname } from "next/navigation";
 
 import { Playlist } from "../types";
 
@@ -44,11 +43,8 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
   const [currentTrack, setCurrentTrack] = useState<Playlist | null>(null);
   const [shouldAutoplay, setShouldAutoplay] = useState<boolean>(false);
   const [showToast, setShowToast] = useState<boolean>(false);
-  const [toastShown, setToastShown] = useState<boolean>(false);
-  const pathname = usePathname();
 
   useEffect(() => {
-    // 플레이리스트가 이미 로드되어 있으면 다시 로드하지 않음 (페이지 이동 시 음악 재생 유지)
     if (playlist.length > 0) return;
 
     const loadPlaylist = async () => {
@@ -59,16 +55,9 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
           const data = (await response.json()) as Playlist[];
           if (Array.isArray(data) && data.length > 0) {
             setPlaylist(data);
-            // currentTrack이 없을 때만 첫 번째 트랙으로 설정 (재생 중인 트랙 유지)
             if (!currentTrack) {
               setCurrentTrack(data[0]);
             }
-
-            // Show toast only once on homepage - 임시 제거
-            // if (!toastShown && pathname === "/") {
-            //   setShowToast(true);
-            //   setToastShown(true);
-            // }
           }
         }
       } catch (error) {
@@ -79,7 +68,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     };
 
     loadPlaylist();
-  }, [toastShown]); // pathname 제거하여 페이지 이동 시 플레이리스트 재로드 방지
+  }, [currentTrack, playlist.length]);
 
   const togglePlayer = useCallback(() => {
     setIsPlayerOpen((prev) => !prev);

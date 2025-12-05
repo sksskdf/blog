@@ -26,10 +26,10 @@ export default function Home() {
   const [showSettingsEditor, setShowSettingsEditor] = useState(false);
 
   useEffect(() => {
-    // 데이터 로드
+
     const loadData = async () => {
       try {
-        // 포스트 리스트 먼저 로드 (우선순위 높음)
+
         const postsRes = await fetch("/api/posts", {
           next: { revalidate: 60 },
           cache: "force-cache",
@@ -41,17 +41,17 @@ export default function Home() {
           setFilteredPosts(posts);
         }
 
-        // 포스트 로드 완료 후 로딩 상태 해제 (포스트가 먼저 표시되도록)
+
         setIsLoading(false);
 
-        // 설정과 방문자수는 백그라운드에서 처리 (포스트 표시를 블로킹하지 않음)
+
         Promise.all([
           fetch("/api/settings", {
             next: { revalidate: 300 },
             cache: "force-cache",
           }),
           fetch("/api/visitor-stats", { method: "GET" }).catch(() => {
-            // 방문자수 증가 실패는 무시
+
           }),
         ]).then(([settingsRes]) => {
           if (settingsRes.ok) {
@@ -71,7 +71,7 @@ export default function Home() {
     loadData();
   }, []);
 
-  // 설정 편집 후 데이터 다시 로드 (캐시 무효화)
+
   useEffect(() => {
     if (!showSettingsEditor) {
       const reloadSettings = async () => {
@@ -185,7 +185,7 @@ export default function Home() {
           const error = await response.json();
           errorMessage = error.error || errorMessage;
         } catch (e) {
-          // JSON 파싱 실패 시 기본 메시지 사용
+
         }
         alert(`오류: ${errorMessage}`);
       }
@@ -200,7 +200,7 @@ export default function Home() {
     setEditingPost(null);
   };
 
-  // 최신 날짜 찾기 (전체 게시글 기준)
+
   const getLatestDate = (): string | null => {
     if (allPostsData.length === 0) return null;
     return allPostsData[0].date;
@@ -217,7 +217,6 @@ export default function Home() {
         onCategoryFilter={handleCategoryFilter}
         selectedCategory={selectedCategory}
       >
-        {/* 차트 막대 그래프 스타일 */}
         <div className="flex items-end justify-center gap-2 h-[60px] mt-40">
           {[1, 2, 3, 4, 5, 4, 3, 2].map((height, index) => (
             <div
@@ -258,7 +257,10 @@ export default function Home() {
           />
         </>
       )}
-      <div className="border-t border-dark-border divide-y divide-dark-border">
+      <div 
+        className="border-t border-dark-border divide-y divide-dark-border"
+        style={{ touchAction: "pan-y" }}
+      >
         {filteredPosts.map(({ id, date, title, category }) => {
           const isNew = latestDate && date === latestDate;
           const categoryText = getCategoryText(category);
@@ -268,6 +270,7 @@ export default function Home() {
               key={id}
               href={`/posts/${id}`}
               className="block group relative p-6 md:p-8 md:hover:bg-dark-card transition-colors duration-300 cursor-pointer"
+              style={{ touchAction: "pan-y" }}
             >
               <article className="relative">
                 <div className="flex flex-row items-baseline gap-8 mb-3">
@@ -298,7 +301,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Arrow Icon on Hover - 관리자 모드일 때는 숨김 */}
                 {!isAdmin && (
                 <div className="absolute top-6 right-6 md:top-8 md:right-8 opacity-0 -translate-x-4 md:group-hover:opacity-100 md:group-hover:translate-x-0 transition-all duration-300 text-brand-green z-10">
                   <svg

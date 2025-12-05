@@ -37,7 +37,6 @@ export default function Sidebar({
   );
 
   useEffect(() => {
-    // 외부에서 전달된 selectedCategory와 동기화
     setSelectedCategory(externalSelectedCategory || null);
   }, [externalSelectedCategory]);
 
@@ -52,9 +51,7 @@ export default function Sidebar({
 
   const handleCategoryClick = (category: string) => {
     if (onCategoryFilter) {
-      // 홈 페이지에서는 필터링
       if (selectedCategory === category) {
-        // 같은 카테고리를 다시 클릭하면 필터 해제
         setSelectedCategory(null);
         onCategoryFilter(null);
       } else {
@@ -62,7 +59,6 @@ export default function Sidebar({
         onCategoryFilter(category);
       }
     } else {
-      // 상세보기 페이지에서는 홈으로 이동 (카테고리 필터는 적용하지 않음)
       router.push("/");
       onClose();
     }
@@ -70,11 +66,9 @@ export default function Sidebar({
 
   const handleAllPostsClick = () => {
     if (onCategoryFilter) {
-      // 홈 페이지에서는 필터 해제
       setSelectedCategory(null);
       onCategoryFilter(null);
     } else {
-      // 상세보기 페이지에서는 홈으로 이동
       router.push("/");
       onClose();
     }
@@ -82,7 +76,6 @@ export default function Sidebar({
 
   return (
     <>
-      {/* 오버레이 */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/80 z-[998] transition-opacity duration-300"
@@ -90,11 +83,13 @@ export default function Sidebar({
         />
       )}
 
-      {/* 사이드바 */}
       <div
-        className={`fixed top-0 right-0 w-[280px] max-w-[80vw] h-screen bg-dark-card border-l border-dark-border shadow-lg z-[999] transform transition-transform duration-300 flex flex-col ${
+        className={`fixed top-0 right-0 w-[280px] max-w-[80vw] h-screen bg-dark-card border-l border-dark-border shadow-lg z-[999] transform transition-transform duration-300 flex flex-col overflow-x-hidden ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
+        style={{
+          pointerEvents: isOpen ? "auto" : "none",
+        }}
       >
         <div className="flex justify-between items-center p-6 border-b border-dark-border">
           <div className="flex items-center gap-3">
@@ -117,13 +112,10 @@ export default function Sidebar({
           className="flex-1 overflow-y-auto p-4"
           style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch" }}
         >
-          {/* Profile Section - Mobile */}
           <div className="lg:hidden mb-6 pb-6 border-b border-dark-border">
             <div className="relative w-full aspect-square max-w-[200px] mx-auto bg-dark-bg rounded-xl border border-dark-border overflow-hidden flex items-center justify-center mb-4">
-              {/* Subtle Grid Background */}
               <div className="absolute inset-0 bg-[linear-gradient(to_right,#111_1px,transparent_1px),linear-gradient(to_bottom,#111_1px,transparent_1px)] bg-[size:20px_20px] opacity-30"></div>
 
-              {/* The Profile Image */}
               <div className="relative z-10 pt-2 opacity-90 hover:opacity-100 transition-opacity duration-300">
                 <Image
                   priority
@@ -165,7 +157,6 @@ export default function Sidebar({
             </div>
           </div>
 
-          {/* Category Section - Only show when posts are available */}
           {posts && posts.length > 0 && (
             <div className="mb-4">
               <h3 className="font-mono text-sm text-brand-green mb-3">

@@ -39,7 +39,7 @@ export default async function PostPage({ params }: PostPageProps) {
   }
 
   const settings = await getSettings();
-  // 사이드바에 카테고리를 표시하기 위해 모든 포스트 로드
+
   const allPostsData = await getSortedPostsData();
 
   return (

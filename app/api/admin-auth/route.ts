@@ -16,13 +16,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       return NextResponse.json({ error: 'Password is required' }, { status: 400 });
     }
 
-    // 타이밍 공격 방지를 위해 constant-time 비교 사용
+
     const passwordBuffer = Buffer.from(password, 'utf8');
     const adminPasswordBuffer = Buffer.from(adminPassword, 'utf8');
     
-    // 길이가 다르면 타이밍 공격에 취약할 수 있으므로, 같은 길이로 맞춰서 비교
+
     if (passwordBuffer.length !== adminPasswordBuffer.length) {
-      // 길이가 다르면 더미 비교를 수행하여 타이밍 공격 방지
+
       timingSafeEqual(
         Buffer.alloc(adminPasswordBuffer.length),
         adminPasswordBuffer

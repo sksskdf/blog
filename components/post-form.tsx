@@ -23,7 +23,6 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
 
   useEffect(() => {
     if (post) {
-      // 카테고리가 배열인 경우 쉼표로 구분된 문자열로 변환
       let categoryStr = '';
       if (post.category) {
         if (Array.isArray(post.category)) {
@@ -40,7 +39,6 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
         content: post.content || '',
       });
     } else {
-      // 새 게시글인 경우 기본값 설정
       const today = new Date().toISOString().split('T')[0];
       setFormData({
         id: '',
@@ -53,7 +51,6 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
   }, [post]);
 
   useEffect(() => {
-    // 마크다운을 HTML로 변환하여 프리뷰 업데이트 (실시간)
     const updatePreview = async () => {
       if (formData.content) {
         try {
@@ -73,7 +70,6 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
     updatePreview();
   }, [formData.content]);
 
-  // 스크롤 동기화
   useEffect(() => {
     const editor = editorRef.current;
     const preview = previewRef.current;
@@ -107,7 +103,6 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    // ID가 없으면 제목에서 생성
     let postId = formData.id;
     if (!postId && formData.title) {
       postId = formData.title
@@ -202,9 +197,7 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
           </div>
         </div>
 
-        {/* 에디터와 프리뷰 동시 동작 */}
         <div className="flex-1 flex overflow-hidden">
-          {/* 에디터 영역 */}
           <div className="flex-1 flex flex-col border-r border-dark-border">
             <div className="px-3 py-2 bg-dark-gray border-b border-dark-border text-sm font-mono font-medium text-dark-text">
               편집
@@ -220,7 +213,6 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
             />
           </div>
 
-          {/* 프리뷰 영역 - 실시간 업데이트 */}
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="px-3 py-2 bg-dark-gray border-b border-dark-border text-sm font-mono font-medium text-dark-text">
               프리뷰

@@ -21,8 +21,8 @@ export async function checkYouTubeEmbeddable(url: string): Promise<{
       return { embeddable: false, error: '유효한 YouTube URL이 아닙니다.' };
     }
 
-    // oEmbed API를 사용하여 확인
-    // 표준 YouTube URL 형식으로 변환
+
+
     const standardUrl = `https://www.youtube.com/watch?v=${videoId}`;
     const oEmbedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(standardUrl)}&format=json`;
     
@@ -33,11 +33,11 @@ export async function checkYouTubeEmbeddable(url: string): Promise<{
         headers: {
           'Accept': 'application/json',
         },
-        // 타임아웃 설정 (10초)
+
         signal: AbortSignal.timeout(10000),
       });
     } catch (fetchError: unknown) {
-      // 네트워크 오류나 타임아웃
+
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
         return {
           embeddable: false,
@@ -57,7 +57,7 @@ export async function checkYouTubeEmbeddable(url: string): Promise<{
     }
 
     if (!response.ok) {
-      // 404, 401, 403 등은 외부 재생 불가능을 의미
+
       if (response.status === 404 || response.status === 401 || response.status === 403) {
         return {
           embeddable: false,
@@ -70,7 +70,7 @@ export async function checkYouTubeEmbeddable(url: string): Promise<{
       };
     }
 
-    // oEmbed 응답 확인
+
     let data: { html?: string; title?: string; [key: string]: unknown };
     try {
       data = await response.json();
@@ -81,22 +81,22 @@ export async function checkYouTubeEmbeddable(url: string): Promise<{
       };
     }
 
-    // oEmbed가 성공하고 html이 있으면 외부 재생 가능
+
     if (data && data.html && typeof data.html === 'string') {
-      // 추가 검증: html에 iframe이 포함되어 있고 videoId가 포함되어 있는지 확인
+
       if (data.html.includes('iframe') && data.html.includes(videoId)) {
         return { embeddable: true };
       }
     }
 
-    // oEmbed는 성공했지만 embed 정보가 없는 경우
+
     return {
       embeddable: false,
       error: '이 동영상은 외부 재생이 허용되지 않습니다.',
     };
   } catch (error) {
     console.error('Error checking YouTube embeddable:', error);
-    // 예상치 못한 오류 발생 시 안전하게 false 반환 (이전에는 true를 반환했음)
+
     return {
       embeddable: false,
       error: '외부 재생 가능 여부를 확인하는 중 오류가 발생했습니다.',

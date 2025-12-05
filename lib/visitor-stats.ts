@@ -24,18 +24,18 @@ export async function getTodayVisitorCount(): Promise<number> {
  */
 export async function incrementVisitorCount(): Promise<void> {
   try {
-    // 먼저 오늘 날짜의 레코드가 있는지 확인
+
     const existing = await queryOne(
       'SELECT count FROM visitor_stats WHERE date = CURRENT_DATE'
     ) as VisitorStatsRow | null;
     
     if (existing) {
-      // 기존 레코드가 있으면 count를 1 증가
+
       await query(
         'UPDATE visitor_stats SET count = count + 1 WHERE date = CURRENT_DATE'
       );
     } else {
-      // 기존 레코드가 없으면 새로 생성 (count = 1)
+
       await query(
         'INSERT INTO visitor_stats (date, count) VALUES (CURRENT_DATE, 1)'
       );

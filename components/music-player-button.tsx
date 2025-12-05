@@ -2,7 +2,6 @@
 
 import { useMusicPlayer } from "../contexts/music-player-context";
 import MusicPlayer from "./music-player";
-// import AutoplayToast from "./autoplay-toast"; // 임시 제거
 
 export default function MusicPlayerButton() {
   const {
@@ -11,25 +10,19 @@ export default function MusicPlayerButton() {
     playlist,
     currentTrack,
     shouldAutoplay,
-    showToast,
     isLoading,
     togglePlayer,
     handleTrackChange,
-    handleAutoplayAccept,
-    handleAutoplayDecline,
   } = useMusicPlayer();
 
-  // 로딩 중이거나 플레이리스트가 없으면 버튼을 표시하지 않음
   if (isLoading) {
     return null;
   }
 
-  // 플레이리스트가 없으면 버튼을 표시하지 않음
   if (!playlist || playlist.length === 0) {
     return null;
   }
 
-  // 현재 트랙의 커버 이미지 또는 기본 아이콘
   const displayCover = currentTrack?.cover || null;
   const defaultIcon = "🎵";
 
@@ -60,14 +53,6 @@ export default function MusicPlayerButton() {
         onTrackChange={handleTrackChange}
         autoPlay={shouldAutoplay}
       />
-      {/* 임시 제거: 음악 자동 재생 팝업
-      {showToast && (
-        <AutoplayToast
-          onAccept={handleAutoplayAccept}
-          onDecline={handleAutoplayDecline}
-        />
-      )}
-      */}
     </>
   );
 }

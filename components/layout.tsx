@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ReactNode } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -28,6 +28,32 @@ export default function Layout({
 }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // 사이드바가 열릴 때 body의 overflow-x와 overflow-y를 hidden으로 설정
+  useEffect(() => {
+    if (isSidebarOpen) {
+      // 가로 스크롤 방지
+      document.body.style.overflowX = "hidden";
+      document.documentElement.style.overflowX = "hidden";
+      // 세로 스크롤 방지 (사이드바 뒤 콘텐츠 스크롤 방지)
+      document.body.style.overflowY = "hidden";
+      document.documentElement.style.overflowY = "hidden";
+    } else {
+      // 원래 상태로 복구
+      document.body.style.overflowX = "";
+      document.documentElement.style.overflowX = "";
+      document.body.style.overflowY = "";
+      document.documentElement.style.overflowY = "";
+    }
+
+    return () => {
+      // 컴포넌트 언마운트 시 원래 상태로 복구
+      document.body.style.overflowX = "";
+      document.documentElement.style.overflowX = "";
+      document.body.style.overflowY = "";
+      document.documentElement.style.overflowY = "";
+    };
+  }, [isSidebarOpen]);
+
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -51,10 +77,8 @@ export default function Layout({
   return (
     <div className="h-screen bg-dark-bg relative overflow-x-hidden flex flex-col">
       <div className="flex flex-row flex-1 min-h-0">
-        {/* Left Sidebar - Desktop Only */}
         <aside className="w-1/3 max-w-[400px] h-full p-8 flex flex-col justify-between border-r border-dark-border bg-dark-bg hidden lg:flex overflow-y-auto overscroll-contain">
           <div>
-            {/* Logo */}
             <Link
               href="/"
               className="flex items-center gap-3 mb-12 hover:opacity-80 transition-opacity cursor-pointer"
@@ -66,13 +90,10 @@ export default function Layout({
               </h1>
             </Link>
 
-            {/* Profile Section */}
             <div className="mb-8">
               <div className="relative w-full aspect-square max-w-[280px] mx-auto lg:mx-0 bg-dark-card rounded-xl border border-dark-border overflow-hidden flex items-center justify-center mb-6">
-                {/* Subtle Grid Background */}
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#111_1px,transparent_1px),linear-gradient(to_bottom,#111_1px,transparent_1px)] bg-[size:20px_20px] opacity-30"></div>
 
-                {/* The Profile Image */}
                 <div className="relative z-10 pt-2 opacity-90 hover:opacity-100 transition-opacity duration-300">
                   <Image
                     priority
@@ -116,9 +137,7 @@ export default function Layout({
           </div>
         </aside>
 
-        {/* Right Content */}
         <main className="flex-1 w-full lg:w-2/3 min-w-0 flex flex-col overflow-hidden">
-          {/* Mobile Nav Header */}
           <div className="lg:hidden p-6 border-b border-dark-border flex justify-between items-center bg-dark-bg flex-shrink-0 z-[100]">
             <Link
               href="/"
@@ -129,7 +148,6 @@ export default function Layout({
             <HamburgerButton isOpen={isSidebarOpen} onClick={toggleSidebar} />
           </div>
 
-          {/* Desktop Header with Hamburger Button */}
           <div className="hidden lg:flex justify-end items-center p-6 border-b border-dark-border bg-dark-bg flex-shrink-0 z-[100]">
             <HamburgerButton isOpen={isSidebarOpen} onClick={toggleSidebar} />
           </div>
@@ -149,6 +167,7 @@ export default function Layout({
               touchAction: "pan-y",
               WebkitOverflowScrolling: "touch",
               overscrollBehavior: "contain",
+              position: "relative",
             }}
           >
             {children}

@@ -35,30 +35,38 @@ export default function PlaylistEditor() {
     }
   };
 
+  const resetFormData = (playlist?: Playlist) => {
+    if (playlist) {
+      setFormData({
+        title: playlist.title || '',
+        artist: playlist.artist || '',
+        url: playlist.url || '',
+        cover: playlist.cover || '',
+        duration: playlist.duration?.toString() || '',
+        displayOrder: playlist.displayOrder ?? 0,
+      });
+    } else {
+      setFormData({
+        title: '',
+        artist: '',
+        url: '',
+        cover: '',
+        duration: '',
+        displayOrder: playlists.length,
+      });
+    }
+  };
+
   const handleAdd = () => {
     setIsAdding(true);
     setEditingId(null);
-    setFormData({
-      title: '',
-      artist: '',
-      url: '',
-      cover: '',
-      duration: '',
-      displayOrder: playlists.length,
-    });
+    resetFormData();
   };
 
   const handleEdit = (playlist: Playlist) => {
     setEditingId(playlist.id);
     setIsAdding(false);
-    setFormData({
-      title: playlist.title || '',
-      artist: playlist.artist || '',
-      url: playlist.url || '',
-      cover: playlist.cover || '',
-      duration: playlist.duration?.toString() || '',
-      displayOrder: playlist.displayOrder ?? 0,
-    });
+    resetFormData(playlist);
   };
 
   const handleDelete = async (id: number) => {
@@ -106,14 +114,7 @@ export default function PlaylistEditor() {
         alert(editingId ? '플레이리스트가 수정되었습니다.' : '플레이리스트가 추가되었습니다.');
         setIsAdding(false);
         setEditingId(null);
-        setFormData({
-          title: '',
-          artist: '',
-          url: '',
-          cover: '',
-          duration: '',
-          displayOrder: 0,
-        });
+        resetFormData();
         loadPlaylists();
       } else {
         const error = await response.json() as { error?: string };
@@ -128,14 +129,7 @@ export default function PlaylistEditor() {
   const handleCancel = () => {
     setIsAdding(false);
     setEditingId(null);
-    setFormData({
-      title: '',
-      artist: '',
-      url: '',
-      cover: '',
-      duration: '',
-      displayOrder: 0,
-    });
+    resetFormData();
   };
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
@@ -163,23 +157,19 @@ export default function PlaylistEditor() {
       return;
     }
 
-    // 새로운 순서 계산
     const newPlaylists = [...playlists];
     const [draggedItem] = newPlaylists.splice(draggedIndex, 1);
     newPlaylists.splice(dropIndex, 0, draggedItem);
 
-    // displayOrder 업데이트
     const updatedPlaylists = newPlaylists.map((playlist, index) => ({
       ...playlist,
       displayOrder: index,
     }));
 
-    // UI 즉시 업데이트
     setPlaylists(updatedPlaylists);
     setDraggedIndex(null);
     setDragOverIndex(null);
 
-    // 서버에 순서 업데이트
     try {
       const updatePromises = updatedPlaylists.map((playlist, index) =>
         fetch(`/api/playlists/${playlist.id}`, {
@@ -210,14 +200,11 @@ export default function PlaylistEditor() {
       if (failed.length > 0) {
         console.error('Some playlist updates failed:', failed);
         alert(`${failed.length}개의 플레이리스트 순서 업데이트에 실패했습니다.`);
-        // 실패 시 원래 순서로 복구
         loadPlaylists();
       }
-      // 성공적으로 업데이트됨
     } catch (error) {
       console.error('Error updating playlist order:', error);
       alert('플레이리스트 순서 업데이트에 실패했습니다.');
-      // 실패 시 원래 순서로 복구
       loadPlaylists();
     }
   };

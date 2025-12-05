@@ -23,7 +23,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       return NextResponse.json({ error: 'Title and URL are required' }, { status: 400 });
     }
 
-    // YouTube URL인 경우 외부 재생 가능 여부 확인
+
     if (isYouTubeUrl(url)) {
       const embedCheck = await checkYouTubeEmbeddable(url);
       if (!embedCheck.embeddable) {

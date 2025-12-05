@@ -17,7 +17,6 @@ export default function SettingsEditor() {
   }, []);
 
   useEffect(() => {
-    // description을 마크다운으로 파싱
     if (!settings) return;
 
     const parseDescription = async () => {

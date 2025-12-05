@@ -14,7 +14,6 @@ interface AdminProviderProps {
 }
 
 export function AdminProvider({ children }: AdminProviderProps) {
-  // 런타임 메모리만 사용 (localStorage 제거)
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   const toggleAdmin = () => {

@@ -118,21 +118,21 @@ export async function updatePost(
   category: string | null = null
 ): Promise<boolean> {
   try {
-    // 게시글 업데이트
-    // Neon의 경우 UPDATE 쿼리는 성공하면 빈 배열을 반환하거나, rowCount 정보가 없을 수 있음
-    // 쿼리가 성공적으로 실행되었다면 (에러가 없다면) 업데이트가 성공한 것으로 간주
+
+
+
     await query(
       'UPDATE posts SET title = $1, date = $2, category = $3, content = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5',
       [title, date, category, content, id]
     );
     
-    // 업데이트 후 해당 ID의 포스트가 존재하는지 확인하여 실제로 업데이트되었는지 검증
+
     const post = await getPostRawData(id);
     if (!post) {
       return false;
     }
     
-    // 업데이트된 내용이 일치하는지 확인
+
     return post.title === title && post.date === date && post.content === content;
   } catch (error) {
     console.error('Error updating post:', error);

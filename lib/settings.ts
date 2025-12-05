@@ -32,17 +32,17 @@ export async function updateSettings(newSettings: Partial<Settings>): Promise<Se
   try {
     const { name, siteTitle, subtitle, description } = newSettings;
     
-    // 기존 설정이 있는지 확인
+
     const existing = await queryOne('SELECT id FROM settings WHERE id = 1');
     
     if (existing) {
-      // 업데이트
+
       await query(
         'UPDATE settings SET name = $1, site_title = $2, subtitle = $3, description = $4, updated_at = CURRENT_TIMESTAMP WHERE id = 1',
         [name || null, siteTitle || null, subtitle || null, description || null]
       );
     } else {
-      // 삽입
+
       await query(
         'INSERT INTO settings (id, name, site_title, subtitle, description, updated_at) VALUES (1, $1, $2, $3, $4, CURRENT_TIMESTAMP)',
         [name || null, siteTitle || null, subtitle || null, description || null]
