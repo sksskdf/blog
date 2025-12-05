@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, RefObject } from "react";
+import { isMobileDevice } from "../lib/utils/device";
 
 const SWIPE_CLOSE_THRESHOLD = 100;
 const SWIPE_OPACITY_THRESHOLD = 200;
@@ -41,7 +42,7 @@ export function useSwipeGesture({
     ) as HTMLElement;
     if (!swipeIndicator) return;
 
-    const isMobile = window.innerWidth < 768;
+    const isMobile = isMobileDevice(768); // Tailwind md 브레이크포인트
     if (!isMobile) return;
 
     const touchStartHandler = (e: globalThis.TouchEvent) => {

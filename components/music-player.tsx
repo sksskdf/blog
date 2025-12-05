@@ -8,6 +8,7 @@ import { useYouTubePlayer } from "../hooks/use-youtube-player";
 import { useAudioPlayer } from "../hooks/use-audio-player";
 import { usePlayerControls } from "../hooks/use-player-controls";
 import { useTrackNavigation } from "../hooks/use-track-navigation";
+import { useIsMobile } from "../lib/utils/device";
 import styles from "./music-player.module.css";
 
 interface MusicPlayerProps {
@@ -39,6 +40,7 @@ export default function MusicPlayer({
   >({});
   const [autoPlayTriggered, setAutoPlayTriggered] = useState<boolean>(false);
   const [userPaused, setUserPaused] = useState<boolean>(false);
+  const isMobile = useIsMobile(768); // Tailwind md 브레이크포인트
   const playlistContainerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<HTMLDivElement | null>(null);
   const shouldPlayAfterTrackChange = useRef<boolean>(false);
@@ -49,6 +51,11 @@ export default function MusicPlayer({
   }, [volume]);
 
   useEffect(() => {
+    // 모바일에서는 기기 볼륨을 사용하므로 볼륨을 1.0으로 고정
+    if (isMobile) {
+      setVolume(1.0);
+      return;
+    }
     const savedVolume = getCookie("musicPlayerVolume");
     if (savedVolume) {
       const volumeValue = parseFloat(savedVolume);
@@ -56,7 +63,7 @@ export default function MusicPlayer({
         setVolume(volumeValue);
       }
     }
-  }, []);
+  }, [isMobile]);
 
   useEffect(() => {
     const currentTrack =
@@ -111,7 +118,7 @@ export default function MusicPlayer({
     isYouTube,
     youtubeVideoId,
     isPlaying,
-    volume,
+    volume: isMobile ? 1.0 : volume,
     volumeRef,
     currentTrack: navigation.currentTrack,
     currentTrackIndex: navigation.currentTrackIndex,
@@ -130,7 +137,7 @@ export default function MusicPlayer({
     isYouTube,
     currentTrack: navigation.currentTrack,
     currentTrackIndex: navigation.currentTrackIndex,
-    volume,
+    volume: isMobile ? 1.0 : volume,
     volumeRef,
     shouldPlayAfterTrackChange,
     onTimeUpdate: (time) => setCurrentTime(time),
@@ -161,7 +168,7 @@ export default function MusicPlayer({
     isYouTube,
     isPlaying,
     duration,
-    volume,
+    volume: isMobile ? 1.0 : volume,
     volumeRef,
     shouldPlayAfterTrackChange,
     youtubePlayer: isYouTube && youtubePlayer ? {
@@ -177,7 +184,12 @@ export default function MusicPlayer({
       pause: audioPlayer.pause,
     } : null,
     onTimeUpdate: (time) => setCurrentTime(time),
-    onVolumeChange: (vol) => setVolume(vol),
+    onVolumeChange: (vol) => {
+      // 모바일에서는 볼륨 변경을 무시
+      if (!isMobile) {
+        setVolume(vol);
+      }
+    },
     onPlayingChange: (playing) => {
       setIsPlaying(playing);
       if (!playing) {
@@ -346,31 +358,40 @@ export default function MusicPlayer({
               </button>
             </div>
 
-            <div className="flex items-center gap-2 md:mt-0 mt-2">
-              <span className="text-base w-6">🔊</span>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volume}
-                onChange={controls.handleVolumeChange}
-                onTouchStart={(e) => {
-                  e.stopPropagation();
-                }}
-                onTouchMove={(e) => {
-                  e.stopPropagation();
-                }}
-                onTouchEnd={(e) => {
-                  e.stopPropagation();
-                }}
-                className={styles.volumeBar}
-                style={{ touchAction: "pan-x" }}
-              />
-              <span className="text-xs text-dark-muted w-10 text-right font-mono">
-                {Math.round(volume * 100)}%
-              </span>
-            </div>
+            {!isMobile ? (
+              <div className="flex items-center gap-2 md:mt-0 mt-2">
+                <span className="text-base w-6">🔊</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={volume}
+                  onChange={controls.handleVolumeChange}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onTouchMove={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onTouchEnd={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className={styles.volumeBar}
+                  style={{ touchAction: "pan-x" }}
+                />
+                <span className="text-xs text-dark-muted w-10 text-right font-mono">
+                  {Math.round(volume * 100)}%
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 md:mt-0 mt-2">
+                <span className="text-base w-6">🔊</span>
+                <div className="flex-1 text-xs text-dark-muted font-mono text-center">
+                  기기 볼륨 사용
+                </div>
+              </div>
+            )}
 
             <div className="text-center pt-2 border-t border-dark-border">
               <button

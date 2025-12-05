@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import { Post, Settings } from "../types";
 import { defaultSettings } from "../lib/settings";
+import { isMobileDevice } from "../lib/utils/device";
 import HamburgerButton from "./hamburger-button";
 import Sidebar from "./sidebar";
 
@@ -36,7 +37,8 @@ export default function Layout({
       document.documentElement.style.overflowX = "hidden";
       // 세로 스크롤 방지 (사이드바 뒤 콘텐츠 스크롤 방지)
       // 모바일에서는 메인 콘텐츠 영역의 스크롤만 제어
-      const isMobile = window.innerWidth < 1024;
+      // Tailwind lg 브레이크포인트(1024px) 사용
+      const isMobile = isMobileDevice(1024);
       if (!isMobile) {
         document.body.style.overflowY = "hidden";
         document.documentElement.style.overflowY = "hidden";
@@ -172,6 +174,7 @@ export default function Layout({
               WebkitOverflowScrolling: "touch",
               overscrollBehavior: "contain",
               position: "relative",
+              paddingBottom: "140px", // 뮤직플레이어 버튼(64px) + 여유 공간(76px)
             }}
           >
             {children}
