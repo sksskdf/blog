@@ -6,23 +6,14 @@ import MusicPlayerButton from "../components/music-player-button";
 import { getSettings, defaultSettings } from "../lib/settings";
 import { ReactNode } from "react";
 import { Metadata, Viewport } from "next";
+import {
+  generateBaseMetadata,
+  generateWebsiteStructuredData,
+} from "../lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
-  const siteTitle = settings.siteTitle || defaultSettings.siteTitle;
-
-  return {
-    title: siteTitle,
-    openGraph: {
-      title: siteTitle,
-      description: "Learn how to build a personal website using Next.js",
-      images: [
-        `https://og-image.vercel.app/${encodeURI(
-          siteTitle
-        )}.png?theme=light&md=0&fontSize=75px&images=https%3A%2F%2Fassets.vercel.com%2Fimage%2Fupload%2Ffront%2Fassets%2Fdesign%2Fnextjs-black-logo.svg`,
-      ],
-    },
-  };
+  return generateBaseMetadata(settings);
 }
 
 export function generateViewport(): Viewport {
@@ -38,10 +29,17 @@ interface RootLayoutProps {
   children: ReactNode;
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default async function RootLayout({ children }: RootLayoutProps) {
+  const settings = await getSettings();
+  const structuredData = generateWebsiteStructuredData(settings);
+
   return (
     <html lang="ko">
       <head>
+        <meta
+          name="google-site-verification"
+          content="yLeXXVk5nzzS8QGnC7INAkNPrKIk-KVXbPjYjQKNEvQ"
+        />
         <link
           href="https://fonts.googleapis.com/icon?family=Material+Icons"
           rel="stylesheet"
@@ -55,6 +53,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;600;800&display=swap"
           rel="stylesheet"
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData),
+          }}
         />
       </head>
       <body>
