@@ -33,6 +33,18 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
   const [postError, setPostError] = useState<string | null>(null);
   const postRequestIdRef = useRef<string | null>(null);
 
+  // 모달이 열릴 때 body 스크롤 잠금
+  useEffect(() => {
+    if (activePost) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [activePost]);
+
   const filteredPosts = useMemo(
     () => filterPostsByCategory(allPostsData, selectedCategory),
     [allPostsData, selectedCategory]
@@ -358,32 +370,37 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
 
       {activePost && (
         <div
-          className="fixed inset-0 z-[900] flex items-center justify-center"
+          className="fixed inset-0 z-[900] flex items-center justify-center p-4 md:p-8 overflow-hidden"
           onClick={handleClosePostModal}
+          style={{ touchAction: "none" }}
         >
           <div className="absolute inset-0 bg-black/70" />
           <div
-            className="relative z-[910] w-[92%] max-w-[960px] max-h-[90vh] overflow-hidden bg-dark-card border border-dark-border rounded-lg shadow-lg"
+            className="relative z-[910] w-full max-w-[600px] md:max-w-[960px] max-h-[85vh] md:max-h-[90vh] flex flex-col bg-dark-card border border-dark-border rounded-lg shadow-lg"
             onClick={(event) => event.stopPropagation()}
+            style={{ touchAction: "pan-y" }}
           >
-            <div className="flex items-start justify-between gap-4 p-6 border-b border-dark-border">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-dark-text leading-tight">
+            <div className="flex items-start justify-between gap-3 p-4 md:p-6 border-b border-dark-border shrink-0">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-xl md:text-3xl font-bold text-dark-text leading-tight break-words">
                   {activePost.title}
                 </h2>
-                <div className="text-dark-muted font-mono text-sm mt-2">
+                <div className="text-dark-muted font-mono text-xs md:text-sm mt-2">
                   <Date dateString={activePost.date} />
                 </div>
               </div>
               <button
                 type="button"
                 onClick={handleClosePostModal}
-                className="px-3 py-1.5 border border-dark-border-subtle rounded text-xs font-mono text-dark-muted hover:border-dark-border hover:text-dark-text transition-colors"
+                className="shrink-0 px-3 py-1.5 border border-dark-border-subtle rounded text-xs font-mono text-dark-muted hover:border-dark-border hover:text-dark-text transition-colors"
               >
                 닫기
               </button>
             </div>
-            <div className="p-6 overflow-y-auto max-h-[70vh]">
+            <div
+              className="flex-1 p-4 md:p-6 overflow-y-auto overscroll-contain"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
               {postLoading && (
                 <p className="text-dark-muted font-mono text-sm">불러오는 중...</p>
               )}
@@ -392,7 +409,7 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
               )}
               {!postLoading && !postError && activePost.contentHtml && (
                 <div
-                  className="prose prose-invert max-w-none"
+                  className="prose prose-invert max-w-none text-sm md:text-base"
                   dangerouslySetInnerHTML={{ __html: activePost.contentHtml }}
                 />
               )}
