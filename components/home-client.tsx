@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef, MouseEvent } from "react";
 import Link from "next/link";
+import { remark } from "remark";
+import html from "remark-html";
 import { useAdmin } from "../contexts/admin-contexts";
 import { Post, Settings } from "../types";
-import { defaultSettings } from "../lib/settings";
 import { filterPostsByCategory, getCategoryText } from "../lib/utils/category";
 import Layout from "./layout";
 import Date from "./date";
@@ -21,12 +22,16 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
   const { isAdmin } = useAdmin();
   const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [allPostsData, setAllPostsData] = useState<Post[]>(initialPosts);
+  const [allPostsData] = useState<Post[]>(initialPosts);
   const [settings, setSettings] = useState<Settings>(initialSettings);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showPlaylistEditor, setShowPlaylistEditor] = useState(false);
   const [showSettingsEditor, setShowSettingsEditor] = useState(false);
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
+  const [activePost, setActivePost] = useState<Post | null>(null);
+  const [postLoading, setPostLoading] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
+  const postRequestIdRef = useRef<string | null>(null);
 
   const filteredPosts = useMemo(
     () => filterPostsByCategory(allPostsData, selectedCategory),
@@ -58,6 +63,73 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
       reloadSettings();
     }
   }, [showSettingsEditor]);
+
+  const handleOpenPost = async (
+    postSummary: Post,
+    event?: MouseEvent<HTMLAnchorElement>
+  ) => {
+    if (event) {
+      const isModifiedClick =
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        event.button !== 0;
+      if (isModifiedClick) {
+        return;
+      }
+      event.preventDefault();
+    }
+
+    postRequestIdRef.current = postSummary.id;
+    setPostLoading(true);
+    setPostError(null);
+    setActivePost({
+      id: postSummary.id,
+      title: postSummary.title,
+      date: postSummary.date,
+      category: postSummary.category ?? null,
+    });
+
+    try {
+      const response = await fetch(`/api/posts/${postSummary.id}`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        throw new Error("게시글을 불러오는데 실패했습니다.");
+      }
+
+      const postData = (await response.json()) as Post;
+      const processedContent = await remark()
+        .use(html)
+        .process(postData.content || "");
+
+      if (postRequestIdRef.current !== postSummary.id) {
+        return;
+      }
+
+      setActivePost({
+        ...postData,
+        contentHtml: processedContent.toString(),
+      });
+    } catch (error) {
+      if (postRequestIdRef.current === postSummary.id) {
+        setPostError("게시글을 불러오는데 실패했습니다.");
+      }
+    } finally {
+      if (postRequestIdRef.current === postSummary.id) {
+        setPostLoading(false);
+      }
+    }
+  };
+
+  const handleClosePostModal = () => {
+    postRequestIdRef.current = null;
+    setActivePost(null);
+    setPostError(null);
+    setPostLoading(false);
+  };
 
   const handleCategoryFilter = (category: string | null) => {
     setSelectedCategory(category);
@@ -190,11 +262,13 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
         {filteredPosts.map(({ id, date, title, category }) => {
           const isNew = latestDate && date === latestDate;
           const categoryText = getCategoryText(category);
+          const postSummary: Post = { id, date, title, category };
 
           return (
             <Link
               key={id}
               href={`/posts/${id}`}
+              onClick={(event) => handleOpenPost(postSummary, event)}
               className="block group relative p-6 md:p-8 md:hover:bg-dark-card transition-colors duration-300 cursor-pointer"
               style={{ touchAction: "pan-y" }}
             >
@@ -281,6 +355,54 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
           );
         })}
       </div>
+
+      {activePost && (
+        <div
+          className="fixed inset-0 z-[900] flex items-center justify-center"
+          onClick={handleClosePostModal}
+        >
+          <div className="absolute inset-0 bg-black/70" />
+          <div
+            className="relative z-[910] w-[92%] max-w-[960px] max-h-[90vh] overflow-hidden bg-dark-card border border-dark-border rounded-lg shadow-lg"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 p-6 border-b border-dark-border">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-dark-text leading-tight">
+                  {activePost.title}
+                </h2>
+                <div className="text-dark-muted font-mono text-sm mt-2">
+                  <Date dateString={activePost.date} />
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleClosePostModal}
+                className="px-3 py-1.5 border border-dark-border-subtle rounded text-xs font-mono text-dark-muted hover:border-dark-border hover:text-dark-text transition-colors"
+              >
+                닫기
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[70vh]">
+              {postLoading && (
+                <p className="text-dark-muted font-mono text-sm">불러오는 중...</p>
+              )}
+              {postError && (
+                <p className="text-red-500 font-mono text-sm">{postError}</p>
+              )}
+              {!postLoading && !postError && activePost.contentHtml && (
+                <div
+                  className="prose prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{ __html: activePost.contentHtml }}
+                />
+              )}
+              {!postLoading && !postError && !activePost.contentHtml && (
+                <p className="text-dark-muted font-mono text-sm">내용이 없습니다.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {isAdmin && (
         <div className="p-12 border-t border-dark-border flex justify-center">

@@ -3,6 +3,8 @@
  * 실제 모바일과 데스크톱 브라우저의 개발자 도구 시뮬레이션 모두에서 일관되게 작동
  */
 
+import { useState, useEffect } from 'react';
+
 /**
  * 모바일 디바이스인지 확인
  * @param breakpoint - 브레이크포인트 (기본값: 768px, Tailwind의 md 브레이크포인트)
@@ -26,31 +28,6 @@ export function isMobileDevice(breakpoint: number = 768): boolean {
   // 화면이 작거나, 터치를 지원하거나, 모바일 User Agent인 경우 모바일로 판단
   return isSmallScreen || (hasTouchSupport && isMobileUA);
 }
-
-/**
- * 태블릿 디바이스인지 확인
- * @returns 태블릿 여부
- */
-export function isTabletDevice(): boolean {
-  if (typeof window === 'undefined') return false;
-  
-  const width = window.innerWidth;
-  const hasTouchSupport = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  
-  // 태블릿은 보통 768px ~ 1024px 사이
-  return width >= 768 && width < 1024 && hasTouchSupport;
-}
-
-/**
- * 데스크톱 디바이스인지 확인
- * @returns 데스크톱 여부
- */
-export function isDesktopDevice(): boolean {
-  return !isMobileDevice() && !isTabletDevice();
-}
-
-// React import
-import { useState, useEffect } from 'react';
 
 /**
  * 화면 크기 변경 감지를 위한 hook (컴포넌트에서 사용)
@@ -80,4 +57,3 @@ export function useIsMobile(breakpoint: number = 768): boolean {
   
   return isMobile;
 }
-

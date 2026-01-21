@@ -18,14 +18,9 @@ interface MusicPlayerContextType {
   currentTrack: Playlist | null;
   setCurrentTrack: (track: Playlist | null) => void;
   shouldAutoplay: boolean;
-  setShouldAutoplay: (autoplay: boolean) => void;
-  showToast: boolean;
-  setShowToast: (show: boolean) => void;
   isLoading: boolean;
   togglePlayer: () => void;
   handleTrackChange: (track: Playlist) => void;
-  handleAutoplayAccept: () => void;
-  handleAutoplayDecline: () => void;
 }
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(
@@ -41,8 +36,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
   const [playlist, setPlaylist] = useState<Playlist[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [currentTrack, setCurrentTrack] = useState<Playlist | null>(null);
-  const [shouldAutoplay, setShouldAutoplay] = useState<boolean>(false);
-  const [showToast, setShowToast] = useState<boolean>(false);
+  const [shouldAutoplay] = useState<boolean>(false);
 
   useEffect(() => {
     if (playlist.length > 0) return;
@@ -78,16 +72,6 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     setCurrentTrack(track);
   }, []);
 
-  const handleAutoplayAccept = useCallback(() => {
-    setShouldAutoplay(true);
-    setShowToast(false);
-  }, []);
-
-  const handleAutoplayDecline = useCallback(() => {
-    setShouldAutoplay(false);
-    setShowToast(false);
-  }, []);
-
   return (
     <MusicPlayerContext.Provider
       value={{
@@ -97,14 +81,9 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         currentTrack,
         setCurrentTrack,
         shouldAutoplay,
-        setShouldAutoplay,
-        showToast,
-        setShowToast,
         isLoading,
         togglePlayer,
         handleTrackChange,
-        handleAutoplayAccept,
-        handleAutoplayDecline,
       }}
     >
       {children}
