@@ -376,11 +376,11 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
         >
           <div className="absolute inset-0 bg-black/70" />
           <div
-            className="relative z-[910] w-full max-w-[600px] md:max-w-[960px] max-h-[85vh] md:max-h-[90vh] flex flex-col bg-dark-card border border-dark-border rounded-lg shadow-lg"
+            className="relative z-[910] w-full max-w-[600px] md:max-w-[960px] max-h-[85vh] md:max-h-[90vh] flex flex-col bg-dark-card border border-dark-border rounded-lg shadow-lg overflow-hidden"
             onClick={(event) => event.stopPropagation()}
             style={{ touchAction: "pan-y" }}
           >
-            <div className="flex items-start justify-between gap-3 p-4 md:p-6 border-b border-dark-border shrink-0">
+            <div className="flex items-start justify-between gap-3 p-4 md:p-6 border-b border-dark-border flex-shrink-0">
               <div className="min-w-0 flex-1">
                 <h2 className="text-xl md:text-3xl font-bold text-dark-text leading-tight break-words">
                   {activePost.title}
@@ -392,13 +392,13 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
               <button
                 type="button"
                 onClick={handleClosePostModal}
-                className="shrink-0 px-3 py-1.5 border border-dark-border-subtle rounded text-xs font-mono text-dark-muted hover:border-dark-border hover:text-dark-text transition-colors"
+                className="flex-shrink-0 px-3 py-1.5 border border-dark-border-subtle rounded text-xs font-mono text-dark-muted hover:border-dark-border hover:text-dark-text transition-colors"
               >
                 닫기
               </button>
             </div>
             <div
-              className="flex-1 p-4 md:p-6 overflow-y-auto overscroll-contain"
+              className="flex-1 min-h-0 p-4 md:p-6 overflow-y-auto overscroll-contain"
               style={{ WebkitOverflowScrolling: "touch" }}
             >
               {postLoading && (
