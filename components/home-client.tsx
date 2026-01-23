@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useRef, MouseEvent } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { remark } from "remark";
 import html from "remark-html";
@@ -32,18 +33,12 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
   const [postLoading, setPostLoading] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
   const postRequestIdRef = useRef<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
-  // 모달이 열릴 때 body 스크롤 잠금
+  // 클라이언트 사이드 마운트 확인 (SSR 안전)
   useEffect(() => {
-    if (activePost) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [activePost]);
+    setMounted(true);
+  }, []);
 
   const filteredPosts = useMemo(
     () => filterPostsByCategory(allPostsData, selectedCategory),
@@ -253,6 +248,7 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
       posts={allPostsData}
       onCategoryFilter={handleCategoryFilter}
       selectedCategory={selectedCategory}
+      scrollLocked={!!activePost}
     >
       {showForm && (
         <>
@@ -368,58 +364,61 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
         })}
       </div>
 
-      {activePost && (
-        <div
-          className="fixed inset-0 z-[900] flex items-center justify-center p-4 md:p-8 overflow-hidden"
-          onClick={handleClosePostModal}
-          style={{ touchAction: "none" }}
-        >
-          <div className="absolute inset-0 bg-black/70" />
+      {mounted &&
+        activePost &&
+        createPortal(
           <div
-            className="relative z-[910] w-full max-w-[600px] md:max-w-[960px] max-h-[85vh] md:max-h-[90vh] flex flex-col bg-dark-card border border-dark-border rounded-lg shadow-lg overflow-hidden"
-            onClick={(event) => event.stopPropagation()}
-            style={{ touchAction: "pan-y" }}
+            className="fixed inset-0 z-[1100] flex items-center justify-center p-4 md:p-8 overflow-hidden"
+            onClick={handleClosePostModal}
+            style={{ touchAction: "none" }}
           >
-            <div className="flex items-start justify-between gap-3 p-4 md:p-6 border-b border-dark-border flex-shrink-0">
-              <div className="min-w-0 flex-1">
-                <h2 className="text-xl md:text-3xl font-bold text-dark-text leading-tight break-words">
-                  {activePost.title}
-                </h2>
-                <div className="text-dark-muted font-mono text-xs md:text-sm mt-2">
-                  <Date dateString={activePost.date} />
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleClosePostModal}
-                className="flex-shrink-0 px-3 py-1.5 border border-dark-border-subtle rounded text-xs font-mono text-dark-muted hover:border-dark-border hover:text-dark-text transition-colors"
-              >
-                닫기
-              </button>
-            </div>
+            <div className="absolute inset-0 bg-black/70" />
             <div
-              className="flex-1 min-h-0 p-4 md:p-6 overflow-y-auto overscroll-contain"
-              style={{ WebkitOverflowScrolling: "touch" }}
+              className="relative z-[1110] w-full max-w-[600px] md:max-w-[960px] max-h-[85vh] md:max-h-[90vh] flex flex-col bg-dark-card border border-dark-border rounded-lg shadow-lg overflow-hidden"
+              onClick={(event) => event.stopPropagation()}
+              style={{ touchAction: "pan-y" }}
             >
-              {postLoading && (
-                <p className="text-dark-muted font-mono text-sm">불러오는 중...</p>
-              )}
-              {postError && (
-                <p className="text-red-500 font-mono text-sm">{postError}</p>
-              )}
-              {!postLoading && !postError && activePost.contentHtml && (
-                <div
-                  className="prose prose-invert max-w-none text-sm md:text-base"
-                  dangerouslySetInnerHTML={{ __html: activePost.contentHtml }}
-                />
-              )}
-              {!postLoading && !postError && !activePost.contentHtml && (
-                <p className="text-dark-muted font-mono text-sm">내용이 없습니다.</p>
-              )}
+              <div className="flex items-start justify-between gap-3 p-4 md:p-6 border-b border-dark-border flex-shrink-0">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl md:text-3xl font-bold text-dark-text leading-tight break-words">
+                    {activePost.title}
+                  </h2>
+                  <div className="text-dark-muted font-mono text-xs md:text-sm mt-2">
+                    <Date dateString={activePost.date} />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClosePostModal}
+                  className="flex-shrink-0 px-3 py-1.5 border border-dark-border-subtle rounded text-xs font-mono text-dark-muted hover:border-dark-border hover:text-dark-text transition-colors"
+                >
+                  닫기
+                </button>
+              </div>
+              <div
+                className="flex-1 min-h-0 p-4 md:p-6 overflow-y-auto overscroll-contain"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
+                {postLoading && (
+                  <p className="text-dark-muted font-mono text-sm">불러오는 중...</p>
+                )}
+                {postError && (
+                  <p className="text-red-500 font-mono text-sm">{postError}</p>
+                )}
+                {!postLoading && !postError && activePost.contentHtml && (
+                  <div
+                    className="prose prose-invert max-w-none text-sm md:text-base"
+                    dangerouslySetInnerHTML={{ __html: activePost.contentHtml }}
+                  />
+                )}
+                {!postLoading && !postError && !activePost.contentHtml && (
+                  <p className="text-dark-muted font-mono text-sm">내용이 없습니다.</p>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {isAdmin && (
         <div className="p-12 border-t border-dark-border flex justify-center">

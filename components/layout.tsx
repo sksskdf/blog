@@ -17,6 +17,7 @@ interface LayoutProps {
   onCategoryFilter?: (category: string | null) => void;
   selectedCategory?: string | null;
   settings?: Settings | null;
+  scrollLocked?: boolean;
 }
 
 export default function Layout({
@@ -26,6 +27,7 @@ export default function Layout({
   onCategoryFilter,
   selectedCategory,
   settings,
+  scrollLocked = false,
 }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -168,7 +170,9 @@ export default function Layout({
           />
 
           <div
-            className="flex-1 overflow-y-auto overscroll-contain min-h-0"
+            className={`flex-1 overscroll-contain min-h-0 ${
+              scrollLocked ? "overflow-y-hidden" : "overflow-y-auto"
+            }`}
             style={{
               touchAction: "pan-y",
               WebkitOverflowScrolling: "touch",
