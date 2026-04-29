@@ -109,6 +109,10 @@ export function generateBaseMetadata(settings: Settings): Metadata {
         "max-snippet": -1,
       },
     },
+    icons: {
+      icon: "/images/profile.png",
+      apple: "/images/profile.png",
+    },
   };
 }
 
