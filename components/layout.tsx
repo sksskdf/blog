@@ -4,11 +4,12 @@ import { useState, useEffect, ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { Post, Settings } from "../types";
+import { Post, Settings, TocItem } from "../types";
 import { defaultSettings } from "../lib/settings";
 import { isMobileDevice } from "../lib/utils/device";
 import HamburgerButton from "./hamburger-button";
 import Sidebar from "./sidebar";
+import TableOfContents from "./table-of-contents";
 
 interface LayoutProps {
   children: ReactNode;
@@ -18,6 +19,7 @@ interface LayoutProps {
   selectedCategory?: string | null;
   settings?: Settings | null;
   scrollLocked?: boolean;
+  tocItems?: TocItem[];
 }
 
 export default function Layout({
@@ -28,6 +30,7 @@ export default function Layout({
   selectedCategory,
   settings,
   scrollLocked = false,
+  tocItems,
 }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -142,6 +145,12 @@ export default function Layout({
                 </a>
               </div>
             </div>
+
+            {tocItems && tocItems.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-dark-border">
+                <TableOfContents items={tocItems} />
+              </div>
+            )}
           </div>
         </aside>
 

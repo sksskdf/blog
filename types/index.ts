@@ -1,4 +1,7 @@
 import { PostRow, PlaylistRow, SettingsRow } from './db';
+import { TocItem } from '../lib/utils/toc';
+
+export type { TocItem };
 
 export interface Post {
   id: string;

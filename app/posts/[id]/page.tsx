@@ -8,6 +8,7 @@ import {
   generatePostMetadata,
   generatePostStructuredData,
 } from "../../../lib/seo";
+import { extractTocItems } from "../../../lib/utils/toc";
 import Layout from "../../../components/layout";
 import Date from "../../../components/date";
 
@@ -54,6 +55,7 @@ export default async function PostPage({ params }: PostPageProps) {
   const settings = await getSettings();
   const allPostsData = await getSortedPostsData();
   const postRawData = await getPostRawData(id);
+  const tocItems = postData.contentHtml ? extractTocItems(postData.contentHtml) : [];
   const structuredData = generatePostStructuredData(
     {
       id: postData.id,
@@ -73,7 +75,7 @@ export default async function PostPage({ params }: PostPageProps) {
           __html: JSON.stringify(structuredData),
         }}
       />
-      <Layout settings={settings} posts={allPostsData}>
+      <Layout settings={settings} posts={allPostsData} tocItems={tocItems}>
         <article className="p-8 md:p-12 pb-28 md:pb-24">
           <h1 className="text-3xl md:text-4xl font-bold mb-4 text-dark-text leading-tight">
             {postData.title}
