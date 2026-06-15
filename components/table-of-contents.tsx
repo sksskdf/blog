@@ -5,9 +5,21 @@ import { TocItem } from "../types";
 
 interface TableOfContentsProps {
   items: TocItem[];
+  /**
+   * Optional scroll container. When the content scrolls inside an element
+   * (e.g. the post detail modal) rather than the window, pass it here so the
+   * active-heading tracking is accurate.
+   */
+  scrollRoot?: HTMLElement | null;
+  /** Whether to render the "목차" heading. Defaults to true. */
+  showHeading?: boolean;
 }
 
-export default function TableOfContents({ items }: TableOfContentsProps) {
+export default function TableOfContents({
+  items,
+  scrollRoot,
+  showHeading = true,
+}: TableOfContentsProps) {
   const [activeId, setActiveId] = useState<string>("");
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -32,6 +44,7 @@ export default function TableOfContents({ items }: TableOfContentsProps) {
         }
       },
       {
+        root: scrollRoot ?? null,
         rootMargin: "0px 0px -60% 0px",
         threshold: 0,
       }
@@ -42,7 +55,7 @@ export default function TableOfContents({ items }: TableOfContentsProps) {
     return () => {
       observerRef.current?.disconnect();
     };
-  }, [items]);
+  }, [items, scrollRoot]);
 
   if (items.length === 0) return null;
 
@@ -50,7 +63,9 @@ export default function TableOfContents({ items }: TableOfContentsProps) {
 
   return (
     <nav aria-label="목차">
-      <h3 className="font-mono text-sm text-brand-green mb-3" aria-label="Table of Contents">목차</h3>
+      {showHeading && (
+        <h3 className="font-mono text-sm text-brand-green mb-3" aria-label="Table of Contents">목차</h3>
+      )}
       <ul className="space-y-1">
         {items.map((item) => {
           const indent = (item.level - minLevel) * 12;

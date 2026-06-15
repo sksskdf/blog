@@ -11,6 +11,7 @@ import {
 import { extractTocItems } from "../../../lib/utils/toc";
 import Layout from "../../../components/layout";
 import Date from "../../../components/date";
+import PostContent from "../../../components/post-content";
 
 interface PostPageProps {
   params: Promise<{
@@ -84,10 +85,7 @@ export default async function PostPage({ params }: PostPageProps) {
             <Date dateString={postData.date} />
           </div>
           {postData.contentHtml && (
-            <div
-              className="prose prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: postData.contentHtml }}
-            />
+            <PostContent html={postData.contentHtml} />
           )}
         </article>
       </Layout>

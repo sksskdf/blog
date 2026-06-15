@@ -167,6 +167,35 @@
   .prose th {
     @apply bg-dark-card font-semibold;
   }
+
+  .prose img {
+    @apply rounded border border-dark-border my-4 mx-auto;
+  }
+
+  /* GFM 체크리스트 */
+  .prose li.task-list-item {
+    @apply list-none -ml-6;
+  }
+
+  .prose li.task-list-item input[type="checkbox"] {
+    @apply mr-2 align-middle accent-brand-green;
+  }
+
+  /* 코드 구문 강조(highlight.js): 토큰 색상은 테마에서 가져오되,
+     배경은 기존 pre 스타일을 유지하도록 투명 처리 */
+  .hljs {
+    background: transparent;
+    padding: 0;
+  }
+
+  /* LaTeX 디스플레이 수식: 긴 수식은 가로 스크롤 */
+  .katex-display {
+    @apply overflow-x-auto overflow-y-hidden;
+  }
+
+  .katex-display > .katex {
+    @apply text-left;
+  }
 }
 
 @layer components {
