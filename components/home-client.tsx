@@ -3,16 +3,17 @@
 import { useEffect, useState, useMemo, useRef, MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { remark } from "remark";
-import html from "remark-html";
 import { useAdmin } from "../contexts/admin-contexts";
 import { Post, Settings } from "../types";
 import { filterPostsByCategory, getCategoryText } from "../lib/utils/category";
+import { extractTocItems } from "../lib/utils/toc";
+import { useCodeCopyButtons } from "../hooks/use-code-copy";
 import Layout from "./layout";
 import Date from "./date";
 import PostForm from "./post-form";
 import PlaylistEditor from "./playlist-editor";
 import SettingsEditor from "./settings-editor";
+import TableOfContents from "./table-of-contents";
 
 interface HomeClientProps {
   initialPosts: Post[];
@@ -34,6 +35,15 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
   const [postError, setPostError] = useState<string | null>(null);
   const postRequestIdRef = useRef<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [modalScrollEl, setModalScrollEl] = useState<HTMLDivElement | null>(null);
+  const [showMobileToc, setShowMobileToc] = useState(false);
+
+  const tocItems = useMemo(
+    () => (activePost?.contentHtml ? extractTocItems(activePost.contentHtml) : []),
+    [activePost?.contentHtml]
+  );
+
+  useCodeCopyButtons(modalScrollEl, activePost?.contentHtml);
 
   // 클라이언트 사이드 마운트 확인 (SSR 안전)
   useEffect(() => {
@@ -108,18 +118,12 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
       }
 
       const postData = (await response.json()) as Post;
-      const processedContent = await remark()
-        .use(html)
-        .process(postData.content || "");
 
       if (postRequestIdRef.current !== postSummary.id) {
         return;
       }
 
-      setActivePost({
-        ...postData,
-        contentHtml: processedContent.toString(),
-      });
+      setActivePost(postData);
     } catch (error) {
       if (postRequestIdRef.current === postSummary.id) {
         setPostError("게시글을 불러오는데 실패했습니다.");
@@ -136,6 +140,7 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
     setActivePost(null);
     setPostError(null);
     setPostLoading(false);
+    setShowMobileToc(false);
   };
 
   const handleCategoryFilter = (category: string | null) => {
@@ -396,6 +401,7 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
                 </button>
               </div>
               <div
+                ref={setModalScrollEl}
                 className="flex-1 min-h-0 p-4 md:p-6 overflow-y-auto overscroll-contain"
                 style={{ WebkitOverflowScrolling: "touch" }}
               >
@@ -406,10 +412,48 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
                   <p className="text-red-500 font-mono text-sm">{postError}</p>
                 )}
                 {!postLoading && !postError && activePost.contentHtml && (
-                  <div
-                    className="prose prose-invert max-w-none text-sm md:text-base"
-                    dangerouslySetInnerHTML={{ __html: activePost.contentHtml }}
-                  />
+                  <div className="flex flex-row gap-6">
+                    <div className="min-w-0 flex-1">
+                      {tocItems.length > 0 && (
+                        <div className="md:hidden mb-4 border border-dark-border rounded">
+                          <button
+                            type="button"
+                            onClick={() => setShowMobileToc((v) => !v)}
+                            className="w-full flex items-center justify-between px-3 py-2 font-mono text-sm text-brand-green"
+                            aria-expanded={showMobileToc}
+                          >
+                            <span>목차</span>
+                            <span className="text-dark-muted">
+                              {showMobileToc ? "−" : "+"}
+                            </span>
+                          </button>
+                          {showMobileToc && (
+                            <div className="px-3 pb-3 pt-3 border-t border-dark-border">
+                              <TableOfContents
+                                items={tocItems}
+                                scrollRoot={modalScrollEl}
+                                showHeading={false}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <div
+                        className="prose prose-invert max-w-none text-sm md:text-base"
+                        dangerouslySetInnerHTML={{ __html: activePost.contentHtml }}
+                      />
+                    </div>
+                    {tocItems.length > 0 && (
+                      <aside className="hidden md:block w-48 flex-shrink-0">
+                        <div className="sticky top-0">
+                          <TableOfContents
+                            items={tocItems}
+                            scrollRoot={modalScrollEl}
+                          />
+                        </div>
+                      </aside>
+                    )}
+                  </div>
                 )}
                 {!postLoading && !postError && !activePost.contentHtml && (
                   <p className="text-dark-muted font-mono text-sm">내용이 없습니다.</p>

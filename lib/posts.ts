@@ -1,9 +1,7 @@
-import { remark } from 'remark';
-import html from 'remark-html';
 import { query, queryOne } from './db';
 import { Post, PostParams, PostRow } from '../types';
 import { QueryResult } from '../types/db';
-import { addHeadingIds } from './utils/toc';
+import { markdownToHtml } from './utils/markdown';
 
 export async function getSortedPostsData(): Promise<Post[]> {
   try {
@@ -50,10 +48,7 @@ export async function getPostData(id: string): Promise<Post | null> {
       return null;
     }
 
-    const processedContent = await remark()
-      .use(html)
-      .process(post.content);
-    const contentHtml = addHeadingIds(processedContent.toString());
+    const contentHtml = await markdownToHtml(post.content);
 
     return {
       id: post.id,

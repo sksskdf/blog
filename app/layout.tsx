@@ -1,4 +1,6 @@
 import "../styles/globals.css";
+import "katex/dist/katex.min.css";
+import "highlight.js/styles/github-dark.css";
 import { AdminProvider } from "../contexts/admin-contexts";
 import { MusicPlayerProvider } from "../contexts/music-player-context";
 import AdminModeHandler from "../components/admin-mode-handler";

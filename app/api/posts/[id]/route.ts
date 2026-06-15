@@ -1,4 +1,5 @@
 import { updatePost, deletePost, getPostRawData } from '../../../../lib/posts';
+import { markdownToHtml } from '../../../../lib/utils/markdown';
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiResponse, Post } from '@/types';
 
@@ -20,12 +21,16 @@ export async function GET(
     }
 
     const postData = await getPostRawData(id);
-    
+
     if (!postData) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
-    
-    return NextResponse.json(postData);
+
+    // Return both the raw markdown (used by the editor) and the rendered HTML
+    // (used by the post detail modal so it matches the full post page).
+    const contentHtml = await markdownToHtml(postData.content || '');
+
+    return NextResponse.json({ ...postData, contentHtml });
   } catch (error) {
     console.error('Error getting post:', error);
     return NextResponse.json({ error: 'Failed to get post' }, { status: 500 });

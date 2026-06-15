@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
-import { remark } from 'remark';
-import html from 'remark-html';
 import styles from './settings-editor.module.css';
 import { Settings } from '../types';
 import { defaultSettings } from '../lib/settings';
@@ -19,21 +17,24 @@ export default function SettingsEditor() {
   useEffect(() => {
     if (!settings) return;
 
+    let cancelled = false;
     const parseDescription = async () => {
       if (settings.description) {
         try {
-          const processed = await remark()
-            .use(html)
-            .process(settings.description);
-          setDescriptionHtml(processed.toString());
+          const { markdownToHtml } = await import('../lib/utils/markdown');
+          const processed = await markdownToHtml(settings.description);
+          if (!cancelled) setDescriptionHtml(processed);
         } catch (error) {
-          setDescriptionHtml(settings.description);
+          if (!cancelled) setDescriptionHtml(settings.description);
         }
       } else {
         setDescriptionHtml("");
       }
     };
     parseDescription();
+    return () => {
+      cancelled = true;
+    };
   }, [settings?.description]);
 
   const loadSettings = async () => {

@@ -1,6 +1,4 @@
 import { useState, useEffect, useRef, FormEvent, ChangeEvent } from 'react';
-import { remark } from 'remark';
-import html from 'remark-html';
 import { Post } from '../types';
 
 interface PostFormProps {
@@ -51,23 +49,34 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
   }, [post]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const updatePreview = async () => {
-      if (formData.content) {
-        try {
-          const processedContent = await remark()
-            .use(html)
-            .process(formData.content);
-          setPreviewHtml(processedContent.toString());
-        } catch (error) {
-          console.error('Error processing markdown:', error);
+      if (!formData.content) {
+        setPreviewHtml('');
+        return;
+      }
+      try {
+        // Dynamic import keeps the heavy markdown/KaTeX/highlight code out of
+        // the main bundle; it only loads when the admin opens the editor.
+        const { markdownToHtml } = await import('../lib/utils/markdown');
+        const result = await markdownToHtml(formData.content);
+        if (!cancelled) {
+          setPreviewHtml(result);
+        }
+      } catch (error) {
+        console.error('Error processing markdown:', error);
+        if (!cancelled) {
           setPreviewHtml('');
         }
-      } else {
-        setPreviewHtml('');
       }
     };
 
     updatePreview();
+
+    return () => {
+      cancelled = true;
+    };
   }, [formData.content]);
 
   useEffect(() => {
@@ -219,7 +228,7 @@ export default function PostForm({ post, onSave, onCancel }: PostFormProps) {
             </div>
             <div
               ref={previewRef}
-              className="flex-1 p-4 overflow-y-auto text-sm leading-relaxed text-dark-text bg-dark-bg"
+              className="prose prose-invert max-w-none flex-1 p-4 overflow-y-auto text-sm leading-relaxed text-dark-text bg-dark-bg"
               dangerouslySetInnerHTML={{
                 __html:
                   previewHtml ||
