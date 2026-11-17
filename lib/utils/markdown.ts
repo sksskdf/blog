@@ -8,7 +8,7 @@ import rehypeKatex from "rehype-katex";
 import rehypeHighlight from "rehype-highlight";
 import rehypeExternalLinks from "rehype-external-links";
 import rehypeStringify from "rehype-stringify";
-import { addHeadingIds } from "./toc";
+import { rehypeHeadingIds } from "./toc";
 
 /**
  * Converts a markdown string to HTML.
@@ -20,7 +20,7 @@ import { addHeadingIds } from "./toc";
  * Supports: GFM (tables, task lists, strikethrough, autolinks), LaTeX math
  * ($...$ and $$...$$), syntax highlighting for fenced code blocks, raw HTML
  * passthrough (e.g. YouTube embeds), and external links opening in a new tab.
- * Heading ids are added afterwards so the table of contents can anchor to them.
+ * Heading ids are added in the pipeline so the table of contents can anchor to them.
  */
 export async function markdownToHtml(markdown: string): Promise<string> {
   const file = await unified()
@@ -29,6 +29,7 @@ export async function markdownToHtml(markdown: string): Promise<string> {
     .use(remarkMath)
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
+    .use(rehypeHeadingIds)
     .use(rehypeKatex)
     .use(rehypeHighlight, { detect: true, ignoreMissing: true })
     .use(rehypeExternalLinks, {
@@ -38,5 +39,5 @@ export async function markdownToHtml(markdown: string): Promise<string> {
     .use(rehypeStringify, { allowDangerousHtml: true })
     .process(markdown);
 
-  return addHeadingIds(String(file));
+  return String(file);
 }
