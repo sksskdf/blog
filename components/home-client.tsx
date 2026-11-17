@@ -57,10 +57,15 @@ export default function HomeClient({ initialPosts, initialSettings }: HomeClient
 
   useEffect(() => {
     if (isAdmin) {
+      // 방문자수 조회가 실패해도 관리자 화면이 깨지지 않도록
+      // 응답이 정상이고 count가 숫자일 때만 값을 반영합니다.
       fetch("/api/visitor-stats")
-        .then((res) => res.json())
-        .then((data) => setVisitorCount(data.count))
-        .catch(() => {});
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: { count?: unknown } | null) => {
+          const count = Number(data?.count);
+          setVisitorCount(data && Number.isFinite(count) ? count : null);
+        })
+        .catch(() => setVisitorCount(null));
     }
   }, [isAdmin]);
 
