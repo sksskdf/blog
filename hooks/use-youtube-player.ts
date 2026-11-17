@@ -215,12 +215,26 @@ export function useYouTubePlayer({
     if (existingContainer) {
       return; // cleanup 함수 없이 반환 (기존 요소 유지)
     }
+    // YT.Player는 전달받은 요소를 iframe(기본 640x390)으로 통째로 교체하므로
+    // 컨테이너 자체에 준 숨김 스타일은 사라집니다. 고정 위치의 1px 래퍼 안에
+    // 넣어야 iframe이 문서 흐름에 끼어들어 페이지 전체가 밀려 올라가지 않습니다.
+    const wrapper = document.createElement("div");
+    wrapper.setAttribute("data-music-player-youtube", "true");
+    wrapper.setAttribute("aria-hidden", "true");
+    Object.assign(wrapper.style, {
+      position: "fixed",
+      left: "0",
+      top: "0",
+      width: "1px",
+      height: "1px",
+      overflow: "hidden",
+      opacity: "0",
+      pointerEvents: "none",
+    });
     const container = document.createElement("div");
     container.id = youtubeContainerId.current;
-    container.className =
-      "absolute w-px h-px overflow-hidden opacity-0 pointer-events-none";
-    container.setAttribute("data-music-player-youtube", "true");
-    document.body.appendChild(container);
+    wrapper.appendChild(container);
+    document.body.appendChild(wrapper);
 
     return () => {
 
@@ -239,6 +253,13 @@ export function useYouTubePlayer({
             youtubePlayerRef.current = null;
           }
           containerToRemove.parentNode.removeChild(containerToRemove);
+        } catch (e) {
+
+        }
+      }
+      if (wrapper.parentNode) {
+        try {
+          wrapper.parentNode.removeChild(wrapper);
         } catch (e) {
 
         }
